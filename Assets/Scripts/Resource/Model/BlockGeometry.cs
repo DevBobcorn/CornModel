@@ -1,0 +1,303 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+namespace MinecraftClient.Resource
+{
+    public class BlockGeometry
+    {
+        public const float MC_VERT_SCALE = 16F;
+        public const float MC_UV_SCALE = 16F;
+
+        public readonly Dictionary<CullDir, List<Vector3>> verticies = new Dictionary<CullDir, List<Vector3>>();
+        public readonly Dictionary<CullDir, List<Vector2>> uvs = new Dictionary<CullDir, List<Vector2>>();
+        public readonly Dictionary<CullDir, List<int>> tris = new Dictionary<CullDir, List<int>>();
+
+        public readonly Dictionary<CullDir, int> vertIndexOffset = new Dictionary<CullDir, int>();
+
+        public BlockGeometry()
+        {
+            // Initialize these collections...
+            foreach (CullDir dir in Enum.GetValues(typeof (CullDir)))
+            {
+                verticies.Add(dir, new List<Vector3>());
+                uvs.Add(dir, new List<Vector2>());
+                tris.Add(dir, new List<int>());
+                vertIndexOffset.Add(dir, 0);
+            }
+        }
+
+        public BlockGeometry(BlockModelWrapper wrapper) : this()
+        {
+            // First do things inherited from first constructor
+            AppendWrapper(wrapper);
+        }
+
+        // A '1' bit in cullFlags means shown, while a '0' indicates culled...
+        public Tuple<Vector3[], Vector2[], int[]> GetData(int cullFlags)
+        {
+            // These things are never culled:
+            List<Vector3> verts = verticies[CullDir.NONE];
+            List<Vector2> txuvs = uvs[CullDir.NONE];
+            List<int> triangles = tris[CullDir.NONE];
+
+            // First bulk is 'verticies[CullDir.NONE]' which has
+            // 'verts.Count' vertices at this time...
+            int bulkVertIndexOffset = verts.Count;
+
+            if ((cullFlags & (1 << 0)) > 0) // 1st bit on, Unity +Y Shown (Up)
+            {
+                verts = verts.Concat(verticies[CullDir.UP]).ToList();
+                txuvs = txuvs.Concat(uvs[CullDir.UP]).ToList();
+                foreach (var vertIndex in tris[CullDir.UP])
+                {   // Apply extra offset when appending tris list
+                    triangles.Add(bulkVertIndexOffset + vertIndex);
+                }
+                bulkVertIndexOffset = verts.Count;
+            }
+
+            if ((cullFlags & (1 << 1)) > 0) // 2nd bit on, Unity -Y Shown (Down)
+            {
+                verts = verts.Concat(verticies[CullDir.DOWN]).ToList();
+                txuvs = txuvs.Concat(uvs[CullDir.DOWN]).ToList();
+                foreach (var vertIndex in tris[CullDir.DOWN])
+                {   // Apply extra offset when appending tris list
+                    triangles.Add(bulkVertIndexOffset + vertIndex);
+                }
+                bulkVertIndexOffset = verts.Count;
+            }
+
+            if ((cullFlags & (1 << 2)) > 0) // 3rd bit on, Unity +X Shown (South)
+            {
+                verts = verts.Concat(verticies[CullDir.SOUTH]).ToList();
+                txuvs = txuvs.Concat(uvs[CullDir.SOUTH]).ToList();
+                foreach (var vertIndex in tris[CullDir.SOUTH])
+                {   // Apply extra offset when appending tris list
+                    triangles.Add(bulkVertIndexOffset + vertIndex);
+                }
+                bulkVertIndexOffset = verts.Count;
+            }
+
+            if ((cullFlags & (1 << 3)) > 0) // 4th bit on, Unity -X Shown (North)
+            {
+                verts = verts.Concat(verticies[CullDir.NORTH]).ToList();
+                txuvs = txuvs.Concat(uvs[CullDir.NORTH]).ToList();
+                foreach (var vertIndex in tris[CullDir.NORTH])
+                {   // Apply extra offset when appending tris list
+                    triangles.Add(bulkVertIndexOffset + vertIndex);
+                }
+                bulkVertIndexOffset = verts.Count;
+            }
+
+            if ((cullFlags & (1 << 4)) > 0) // 5th bit on, Unity +Z Shown (East)
+            {
+                verts = verts.Concat(verticies[CullDir.EAST]).ToList();
+                txuvs = txuvs.Concat(uvs[CullDir.EAST]).ToList();
+                foreach (var vertIndex in tris[CullDir.EAST])
+                {   // Apply extra offset when appending tris list
+                    triangles.Add(bulkVertIndexOffset + vertIndex);
+                }
+                bulkVertIndexOffset = verts.Count;
+            }
+
+            if ((cullFlags & (1 << 5)) > 0) // 6th bit on, Unity -Z Shown (West)
+            {
+                verts = verts.Concat(verticies[CullDir.WEST]).ToList();
+                txuvs = txuvs.Concat(uvs[CullDir.WEST]).ToList();
+                foreach (var vertIndex in tris[CullDir.WEST])
+                {   // Apply extra offset when appending tris list
+                    triangles.Add(bulkVertIndexOffset + vertIndex);
+                }
+                bulkVertIndexOffset = verts.Count;
+            }
+
+            return Tuple.Create(verts.ToArray(), txuvs.ToArray(), triangles.ToArray());
+
+        }
+
+        public void AppendWrapper(BlockModelWrapper wrapper)
+        {
+            // Build things up!
+            foreach (var elem in wrapper.model.elements)
+            {
+                AppendElement(wrapper.model, elem, wrapper.zyRot);
+            }
+
+        }
+
+        private void AppendElement(BlockModel model, BlockModelElement elem, Vector2Int zyRot)
+        {
+            float lx = Mathf.Min(elem.from.x, elem.to.x) / MC_VERT_SCALE;
+            float mx = Mathf.Max(elem.from.x, elem.to.x) / MC_VERT_SCALE;
+            float ly = Mathf.Min(elem.from.y, elem.to.y) / MC_VERT_SCALE;
+            float my = Mathf.Max(elem.from.y, elem.to.y) / MC_VERT_SCALE;
+            float lz = Mathf.Min(elem.from.z, elem.to.z) / MC_VERT_SCALE;
+            float mz = Mathf.Max(elem.from.z, elem.to.z) / MC_VERT_SCALE;
+
+            Vector3[] elemVerts = new Vector3[]{
+                new Vector3(lx, ly, lz), new Vector3(lx, ly, mz),
+                new Vector3(lx, my, lz), new Vector3(lx, my, mz),
+                new Vector3(mx, ly, lz), new Vector3(mx, ly, mz),
+                new Vector3(mx, my, lz), new Vector3(mx, my, mz)
+            };
+
+            if (elem.rotAngle != 0F) // Apply model rotation...
+                Rotations.RotateVertices(ref elemVerts, elem.pivot / MC_VERT_SCALE, elem.axis, -elem.rotAngle, elem.rescale); // TODO Check angle
+            
+            if (zyRot != Vector2Int.zero)
+                Rotations.RotateWrapper(ref elemVerts, zyRot);
+
+            foreach (var facePair in elem.faces)
+            {
+                // Select the current face
+                var face = facePair.Value;
+
+                // Update current cull direcion...
+                var cullDir = cullMap[zyRot][face.cullDir];
+
+                switch (facePair.Key) // Build face in that direction
+                {
+                    case FaceDir.UP:    // Unity +Y
+                        verticies[cullDir].Add(elemVerts[2]); // 0
+                        verticies[cullDir].Add(elemVerts[3]); // 1
+                        verticies[cullDir].Add(elemVerts[6]); // 2
+                        verticies[cullDir].Add(elemVerts[7]); // 3
+                        break;
+                    case FaceDir.DOWN:  // Unity -Y
+                        verticies[cullDir].Add(elemVerts[4]); // 0
+                        verticies[cullDir].Add(elemVerts[5]); // 1
+                        verticies[cullDir].Add(elemVerts[0]); // 2
+                        verticies[cullDir].Add(elemVerts[1]); // 3
+                        break;
+                    case FaceDir.SOUTH: // Unity +X
+                        verticies[cullDir].Add(elemVerts[6]); // 0
+                        verticies[cullDir].Add(elemVerts[7]); // 1
+                        verticies[cullDir].Add(elemVerts[4]); // 2
+                        verticies[cullDir].Add(elemVerts[5]); // 3
+                        break;
+                    case FaceDir.NORTH: // Unity -X
+                        verticies[cullDir].Add(elemVerts[3]); // 0
+                        verticies[cullDir].Add(elemVerts[2]); // 1
+                        verticies[cullDir].Add(elemVerts[1]); // 2
+                        verticies[cullDir].Add(elemVerts[0]); // 3
+                        break;
+                    case FaceDir.EAST:  // Unity +Z
+                        verticies[cullDir].Add(elemVerts[7]); // 0
+                        verticies[cullDir].Add(elemVerts[3]); // 1
+                        verticies[cullDir].Add(elemVerts[5]); // 2
+                        verticies[cullDir].Add(elemVerts[1]); // 3
+                        break;
+                    case FaceDir.WEST:  // Unity -Z
+                        verticies[cullDir].Add(elemVerts[2]); // 0
+                        verticies[cullDir].Add(elemVerts[6]); // 1
+                        verticies[cullDir].Add(elemVerts[0]); // 2
+                        verticies[cullDir].Add(elemVerts[4]); // 3
+                        break;
+                }
+
+                ResourceLocation texIdentifier = model.resolveTextureName(face.texName);
+
+                Vector4 remappedUVs = RemapUVs(face.uv / MC_UV_SCALE, texIdentifier);
+                // Make uv values clearer and easier to refer to...
+                float x1 = remappedUVs.x, x2 = remappedUVs.z;
+                float y1 = remappedUVs.y, y2 = remappedUVs.w;
+
+                // This rotation doesn't change the area of texture used...
+                // See https://minecraft.fandom.com/wiki/Model#Block_models
+                switch (face.rot)
+                {
+                    case Rotations.UVRot.UV_90:
+                        uvs[cullDir].Add(new Vector2(x1, y2)); // 2
+                        uvs[cullDir].Add(new Vector2(x1, y1)); // 0
+                        uvs[cullDir].Add(new Vector2(x2, y2)); // 3
+                        uvs[cullDir].Add(new Vector2(x2, y1)); // 1
+                        break;
+                    case Rotations.UVRot.UV_180:
+                        uvs[cullDir].Add(new Vector2(x2, y2)); // 3
+                        uvs[cullDir].Add(new Vector2(x1, y2)); // 2
+                        uvs[cullDir].Add(new Vector2(x2, y1)); // 1
+                        uvs[cullDir].Add(new Vector2(x1, y1)); // 0
+                        break;
+                    case Rotations.UVRot.UV_270:
+                        uvs[cullDir].Add(new Vector2(x2, y1)); // 1
+                        uvs[cullDir].Add(new Vector2(x2, y2)); // 3
+                        uvs[cullDir].Add(new Vector2(x1, y1)); // 0
+                        uvs[cullDir].Add(new Vector2(x1, y2)); // 2
+                        break;
+                    default: // Including Rotations.UVRot.UV_0
+                        uvs[cullDir].Add(new Vector2(x1, y1)); // 0
+                        uvs[cullDir].Add(new Vector2(x2, y1)); // 1
+                        uvs[cullDir].Add(new Vector2(x1, y2)); // 2
+                        uvs[cullDir].Add(new Vector2(x2, y2)); // 3
+                        break;
+                }
+                
+
+                // Update vertex offset to current face's cull direction
+                int offset = vertIndexOffset[cullDir];
+
+                tris[cullDir] = tris[cullDir].Concat(new List<int>(){
+                    offset + 0, offset + 1, offset + 2, offset + 2, offset + 1, offset + 3
+                }).ToList();
+
+                // Increament vertex index offset of this cull direction
+                vertIndexOffset[cullDir] += 4; // Four vertices per quad
+            }
+
+        }
+
+        private static Vector4 RemapUVs(Vector4 uvs, ResourceLocation source)
+        {
+            return BlockTextureManager.GetUVs(source, uvs);
+        }
+
+        private static Dictionary<Vector2Int, Dictionary<CullDir, CullDir>> CreateCullMap()
+        {
+            var cullRemap = new Dictionary<Vector2Int, Dictionary<CullDir, CullDir>>();
+            var rotYMap = new CullDir[]{ CullDir.NORTH, CullDir.EAST, CullDir.SOUTH, CullDir.WEST };
+
+            for (int roty = 0;roty < 4;roty++)
+            {
+                var rotYMapRotated = rotYMap.Skip(roty).Concat(rotYMap.Take(roty)).ToArray();
+                var rotZMap = new CullDir[]{ rotYMapRotated[0], CullDir.DOWN, rotYMapRotated[2], CullDir.UP };
+                for (int rotz = 0;rotz < 4;rotz++)
+                {
+                    //Debug.Log("Rotation: z: " + rotx + ", y: " + roty);
+
+                    var rotZMapRotated = rotZMap.Skip(rotz).Concat(rotZMap.Take(rotz)).ToArray();
+
+                    var rotYRemap = new Dictionary<CullDir, CullDir>(){
+                        { rotYMap[0], rotYMapRotated[0] }, { rotYMap[1], rotYMapRotated[1] },
+                        { rotYMap[2], rotYMapRotated[2] }, { rotYMap[3], rotYMapRotated[3] }
+                    };
+
+                    var rotZRemap = new Dictionary<CullDir, CullDir>(){
+                        { rotZMap[0], rotZMapRotated[0] }, { rotZMap[1], rotZMapRotated[1] },
+                        { rotZMap[2], rotZMapRotated[2] }, { rotZMap[3], rotZMapRotated[3] }
+                    };
+
+                    var remap = new Dictionary<CullDir, CullDir>();
+                    foreach (CullDir original in Enum.GetValues(typeof (CullDir)))
+                    {
+                        CullDir target = rotZRemap.GetValueOrDefault(
+                            rotYRemap.GetValueOrDefault(original, original),
+                            rotYRemap.GetValueOrDefault(original, original)
+                        );
+                        //Debug.Log(original + " => " + target);
+                        remap.Add(original, target);
+                    }
+
+                    cullRemap.Add(new Vector2Int(rotz, roty), remap);
+
+                }
+            }
+
+            return cullRemap;
+
+        }
+
+        private static readonly Dictionary<Vector2Int, Dictionary<CullDir, CullDir>> cullMap = CreateCullMap();
+
+    }
+}
