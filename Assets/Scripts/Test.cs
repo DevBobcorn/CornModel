@@ -1,12 +1,12 @@
 using UnityEngine;
 using MinecraftClient.Resource;
-
+using MinecraftClient.BlockData;
 public class Test : MonoBehaviour
 {
     public void TestBuildModel(string name, BlockModel model, int cullFlags, Vector3 pos)
     {
         // First prepare our model data
-        var wrapper = new BlockModelWrapper(model, Vector2Int.zero);
+        var wrapper = new BlockModelWrapper(model, Vector2Int.zero, false);
         var geometry = new BlockGeometry(wrapper);
         var geoData = geometry.GetData(cullFlags);
 
@@ -60,7 +60,7 @@ public class Test : MonoBehaviour
     void Start()
     {
         // First load all possible Block States...
-        ResourcePackManager.ReadServerBlocks();
+        BlockManager.ReadServerBlocks();
 
         // Create a new resource pack...
         ResourcePackManager manager = new ResourcePackManager();
@@ -81,7 +81,7 @@ public class Test : MonoBehaviour
                 int index = count - start;
                 if (index >= 0)
                 {
-                    string stateName = ResourcePackManager.StatesTable[item.Key].ToString();
+                    string stateName = BlockManager.StatesTable[item.Key].ToString();
 
                     int height = 0;
 

@@ -1,6 +1,8 @@
 using System.IO;
 using UnityEngine;
 
+using MinecraftClient.BlockData;
+
 namespace MinecraftClient.Resource
 {
     public class ResourcePack
@@ -117,13 +119,13 @@ namespace MinecraftClient.Resource
         public void BuildStateGeometries(ResourcePackManager manager)
         {
             // Load all blockstate files, make and assign their block meshes...
-            if (ResourcePackManager.BlockStatesReady && isValid)
+            if (BlockManager.BlockStatesReady && isValid)
             {
                 // Assets folder...
                 DirectoryInfo assetsDir = new DirectoryInfo(ResourcePackManager.GetPackDirectoryNamed(packName) + "/assets");
                 if (assetsDir.Exists)
                 {
-                    foreach (var blockPair in ResourcePackManager.BlocksTable)
+                    foreach (var blockPair in BlockManager.BlocksTable)
                     {
                         var blockId = blockPair.Key;
                         bool shouldLoad = false;

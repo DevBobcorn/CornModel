@@ -34,6 +34,16 @@ namespace MinecraftClient.Resource
             AppendWrapper(wrapper);
         }
 
+        public void AppendWrapper(BlockModelWrapper wrapper)
+        {
+            // Build things up!
+            foreach (var elem in wrapper.model.elements)
+            {
+                AppendElement(wrapper.model, elem, wrapper.zyRot, wrapper.uvlock);
+            }
+
+        }
+
         // A '1' bit in cullFlags means shown, while a '0' indicates culled...
         public Tuple<Vector3[], Vector2[], int[]> GetData(int cullFlags)
         {
@@ -116,17 +126,7 @@ namespace MinecraftClient.Resource
 
         }
 
-        public void AppendWrapper(BlockModelWrapper wrapper)
-        {
-            // Build things up!
-            foreach (var elem in wrapper.model.elements)
-            {
-                AppendElement(wrapper.model, elem, wrapper.zyRot);
-            }
-
-        }
-
-        private void AppendElement(BlockModel model, BlockModelElement elem, Vector2Int zyRot)
+        private void AppendElement(BlockModel model, BlockModelElement elem, Vector2Int zyRot, bool uvlock)
         {
             float lx = Mathf.Min(elem.from.x, elem.to.x) / MC_VERT_SCALE;
             float mx = Mathf.Max(elem.from.x, elem.to.x) / MC_VERT_SCALE;
@@ -199,6 +199,8 @@ namespace MinecraftClient.Resource
                 ResourceLocation texIdentifier = model.resolveTextureName(face.texName);
 
                 Vector4 remappedUVs = RemapUVs(face.uv / MC_UV_SCALE, texIdentifier);
+                // TODO Apply uv lock
+
                 // Make uv values clearer and easier to refer to...
                 float x1 = remappedUVs.x, x2 = remappedUVs.z;
                 float y1 = remappedUVs.y, y2 = remappedUVs.w;
