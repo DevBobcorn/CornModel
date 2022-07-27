@@ -1,6 +1,7 @@
 using UnityEngine;
 using MinecraftClient.Resource;
-using MinecraftClient.BlockData;
+using MinecraftClient.Mapping;
+using MinecraftClient.Mapping.BlockStatePalettes;
 public class Test : MonoBehaviour
 {
     public void TestBuildModel(string name, BlockModel model, int cullFlags, Vector3 pos)
@@ -60,7 +61,8 @@ public class Test : MonoBehaviour
     void Start()
     {
         // First load all possible Block States...
-        BlockManager.ReadServerBlocks();
+        Block.Palette = new Palette116();
+        Block.Palette.ReadBlockStates();
 
         // Create a new resource pack...
         ResourcePackManager manager = new ResourcePackManager();
@@ -81,7 +83,7 @@ public class Test : MonoBehaviour
                 int index = count - start;
                 if (index >= 0)
                 {
-                    string stateName = BlockManager.StatesTable[item.Key].ToString();
+                    string stateName = Block.Palette.StatesTable[item.Key].ToString();
 
                     int height = 0;
 

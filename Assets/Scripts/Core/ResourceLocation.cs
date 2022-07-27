@@ -1,4 +1,4 @@
-namespace MinecraftClient.Resource
+namespace MinecraftClient
 {
     public struct ResourceLocation
     {
@@ -14,6 +14,12 @@ namespace MinecraftClient.Resource
             this.path = path;
         }
 
+        public ResourceLocation(string path)
+        {
+            this.nameSpace = defaultNameSpace;
+            this.path = path;
+        }
+
         public static ResourceLocation fromString(string source)
         {
             if (source.Contains(':'))
@@ -21,7 +27,7 @@ namespace MinecraftClient.Resource
                 string[] parts = source.Split(':', 2);
                 return new ResourceLocation(parts[0], parts[1]);
             }
-            return new ResourceLocation(defaultNameSpace, source);
+            return new ResourceLocation(source);
         }
 
         public static bool operator ==(ResourceLocation a, ResourceLocation b)

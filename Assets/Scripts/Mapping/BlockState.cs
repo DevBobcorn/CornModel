@@ -1,10 +1,15 @@
 using System.Collections.Generic;
-using MinecraftClient.Resource;
 
-namespace MinecraftClient.BlockData
+namespace MinecraftClient.Mapping
 {
     public class BlockState
     {
+        public static readonly ResourceLocation AIR_ID      = new ResourceLocation("air");
+        public static readonly ResourceLocation CAVE_AIR_ID = new ResourceLocation("cave_air");
+        public static readonly ResourceLocation VOID_AIR_ID = new ResourceLocation("void_air");
+
+        public static readonly BlockState AIR_STATE = new BlockState(new ResourceLocation("air"));
+
         public readonly ResourceLocation blockId; // Something like 'minecraft:grass_block'
         public readonly Dictionary<string, string> props;
 
