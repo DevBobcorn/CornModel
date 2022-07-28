@@ -9,24 +9,37 @@ namespace MinecraftClient.Resource
         private static Dictionary<ResourceLocation, int> blockAtlasTable = new Dictionary<ResourceLocation, int>();
         private static bool initialized = false;
 
-        public static Vector4 GetUVs(ResourceLocation identifier, Vector4 part)
+        public static Vector2[] GetUVs(ResourceLocation identifier, Vector4 part, int areaRot)
         {
-            return GetUVsAtOffset(GetAtlasOffset(identifier), part);
+            return GetUVsAtOffset(GetAtlasOffset(identifier), part, areaRot);
         }
 
         private const int TexturesInALine = 32;
-        private const float SingleSize = 1.0F / TexturesInALine; // Size of a single block texture
+        private const float One = 1.0F / TexturesInALine; // Size of a single block texture
 
-        private static Vector4 GetUVsAtOffset(int offset, Vector4 part)
+        private static Vector2[] GetUVsAtOffset(int offset, Vector4 part, int areaRot)
         {
             // vect: x,  y,  z,  w
             // vect: x1, y1, x2, y2
 
-            part *= SingleSize;
+            part *= One;
 
             float blockU = (offset % TexturesInALine) / (float)TexturesInALine;
             float blockV = (offset / TexturesInALine) / (float)TexturesInALine;
-            return new Vector4(blockU + part.x, blockV + (SingleSize - part.y), blockU + part.z, blockV + (SingleSize - part.w));
+            Vector2 o = new Vector2(blockU, blockV);
+
+            float u1 = part.x, v1 = part.y;
+            float u2 = part.z, v2 = part.w;
+
+            return areaRot switch
+            {
+                0 => new Vector2[]{ new Vector2(      u1, One - v1) + o, new Vector2(      u2, One - v1) + o, new Vector2(      u1, One - v2) + o, new Vector2(      u2, One - v2) + o }, //   0 Deg
+                1 => new Vector2[]{ new Vector2(      v1,       u1) + o, new Vector2(      v1,       u2) + o, new Vector2(      v2,       u1) + o, new Vector2(      v2,       u2) + o }, //  90 Deg
+                2 => new Vector2[]{ new Vector2(One - u1,       v1) + o, new Vector2(One - u2,       v1) + o, new Vector2(One - u1,       v2) + o, new Vector2(One - u2,       v2) + o }, // 180 Deg
+                3 => new Vector2[]{ new Vector2(One - v1, One - u1) + o, new Vector2(One - v1, One - u2) + o, new Vector2(One - v2, One - u1) + o, new Vector2(One - v2, One - u2) + o }, // 270 Deg
+
+                _ => new Vector2[]{ new Vector2(      u1, One - v1) + o, new Vector2(      u2, One - v1) + o, new Vector2(      u1, One - v2) + o, new Vector2(      u2, One - v2) + o }  // Default
+            };
         }        
 
         private static int GetAtlasOffset(ResourceLocation identifier)

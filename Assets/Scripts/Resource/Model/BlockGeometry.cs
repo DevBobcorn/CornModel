@@ -145,7 +145,7 @@ namespace MinecraftClient.Resource
             if (elem.rotAngle != 0F) // Apply model rotation...
                 Rotations.RotateVertices(ref elemVerts, elem.pivot / MC_VERT_SCALE, elem.axis, -elem.rotAngle, elem.rescale); // TODO Check angle
             
-            if (zyRot != Vector2Int.zero)
+            if (zyRot != Vector2Int.zero) // Apply state rotation...
                 Rotations.RotateWrapper(ref elemVerts, zyRot);
 
             foreach (var facePair in elem.faces)
@@ -198,40 +198,40 @@ namespace MinecraftClient.Resource
 
                 ResourceLocation texIdentifier = model.resolveTextureName(face.texName);
 
-                Vector4 remappedUVs = RemapUVs(face.uv / MC_UV_SCALE, texIdentifier);
-                // TODO Apply uv lock
+                // This value is mapped only when uvlock is on, according to this block state's
+                // state rotation, and it rotates the area of texture which is used on the face
+                // TODO Implement
+                int areaRot = 0;
 
-                // Make uv values clearer and easier to refer to...
-                float x1 = remappedUVs.x, x2 = remappedUVs.z;
-                float y1 = remappedUVs.y, y2 = remappedUVs.w;
+                Vector2[] remappedUVs = RemapUVs(face.uv / MC_UV_SCALE, texIdentifier, areaRot);
 
                 // This rotation doesn't change the area of texture used...
                 // See https://minecraft.fandom.com/wiki/Model#Block_models
                 switch (face.rot)
                 {
                     case Rotations.UVRot.UV_90:
-                        uvs[cullDir].Add(new Vector2(x1, y2)); // 2
-                        uvs[cullDir].Add(new Vector2(x1, y1)); // 0
-                        uvs[cullDir].Add(new Vector2(x2, y2)); // 3
-                        uvs[cullDir].Add(new Vector2(x2, y1)); // 1
+                        uvs[cullDir].Add(remappedUVs[2]); // 2
+                        uvs[cullDir].Add(remappedUVs[0]); // 0
+                        uvs[cullDir].Add(remappedUVs[3]); // 3
+                        uvs[cullDir].Add(remappedUVs[1]); // 1
                         break;
                     case Rotations.UVRot.UV_180:
-                        uvs[cullDir].Add(new Vector2(x2, y2)); // 3
-                        uvs[cullDir].Add(new Vector2(x1, y2)); // 2
-                        uvs[cullDir].Add(new Vector2(x2, y1)); // 1
-                        uvs[cullDir].Add(new Vector2(x1, y1)); // 0
+                        uvs[cullDir].Add(remappedUVs[3]); // 3
+                        uvs[cullDir].Add(remappedUVs[2]); // 2
+                        uvs[cullDir].Add(remappedUVs[1]); // 1
+                        uvs[cullDir].Add(remappedUVs[0]); // 0
                         break;
                     case Rotations.UVRot.UV_270:
-                        uvs[cullDir].Add(new Vector2(x2, y1)); // 1
-                        uvs[cullDir].Add(new Vector2(x2, y2)); // 3
-                        uvs[cullDir].Add(new Vector2(x1, y1)); // 0
-                        uvs[cullDir].Add(new Vector2(x1, y2)); // 2
+                        uvs[cullDir].Add(remappedUVs[1]); // 1
+                        uvs[cullDir].Add(remappedUVs[3]); // 3
+                        uvs[cullDir].Add(remappedUVs[0]); // 0
+                        uvs[cullDir].Add(remappedUVs[2]); // 2
                         break;
                     default: // Including Rotations.UVRot.UV_0
-                        uvs[cullDir].Add(new Vector2(x1, y1)); // 0
-                        uvs[cullDir].Add(new Vector2(x2, y1)); // 1
-                        uvs[cullDir].Add(new Vector2(x1, y2)); // 2
-                        uvs[cullDir].Add(new Vector2(x2, y2)); // 3
+                        uvs[cullDir].Add(remappedUVs[0]); // 0
+                        uvs[cullDir].Add(remappedUVs[1]); // 1
+                        uvs[cullDir].Add(remappedUVs[2]); // 2
+                        uvs[cullDir].Add(remappedUVs[3]); // 3
                         break;
                 }
                 
@@ -249,9 +249,9 @@ namespace MinecraftClient.Resource
 
         }
 
-        private static Vector4 RemapUVs(Vector4 uvs, ResourceLocation source)
+        private static Vector2[] RemapUVs(Vector4 uvs, ResourceLocation source, int exRot)
         {
-            return BlockTextureManager.GetUVs(source, uvs);
+            return BlockTextureManager.GetUVs(source, uvs, exRot);
         }
 
         private static Dictionary<Vector2Int, Dictionary<CullDir, CullDir>> CreateCullMap()
