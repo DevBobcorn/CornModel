@@ -73,7 +73,7 @@ namespace MinecraftClient.Resource
                 atlasTexture.filterMode = FilterMode.Point;
 
                 // Set up atlas material...
-                atlasMaterial = new Material(Shader.Find("Standard"));
+                atlasMaterial = new Material(Shader.Find("Unicorn/BlockCutout"));
                 atlasMaterial.EnableKeyword("_ALPHATEST_ON");
                 atlasMaterial.SetTexture("_MainTex", atlasTexture);
                 atlasMaterial.SetFloat("_Mode", 1);

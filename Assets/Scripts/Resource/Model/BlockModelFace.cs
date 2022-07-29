@@ -7,6 +7,7 @@ namespace MinecraftClient.Resource
         // Texture coords for left-upper and right-lower corners
         public Vector4 uv;
         public Rotations.UVRot rot = Rotations.UVRot.UV_0;
+        public int tintIndex = -1;
         public string texName = string.Empty;
         public CullDir cullDir = CullDir.NONE;
 
@@ -61,6 +62,11 @@ namespace MinecraftClient.Resource
             if (data.Properties.ContainsKey("cullface"))
             {
                 face.cullDir = Directions.CullDirFromName(data.Properties["cullface"].StringValue);
+            }
+
+            if (data.Properties.ContainsKey("tintindex"))
+            {
+                int.TryParse(data.Properties["tintindex"].StringValue, out face.tintIndex);
             }
 
             return face;

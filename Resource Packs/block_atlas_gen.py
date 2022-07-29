@@ -1,7 +1,8 @@
 from PIL import Image, ImageOps
 import os, glob, json
 
-recolor_dict = {
+recolor_dict = { }
+'''{
     'minecraft:block/birch_leaves': (128, 167, 55),
     'minecraft:block/spruce_leaves': (97, 153, 97),
     'minecraft:block/lily_pad': (32, 128, 48),
@@ -20,7 +21,7 @@ recolor_dict = {
     'minecraft:block/acacia_leaves': (119, 171, 47),
     'minecraft:block/jungle_leaves': (119, 171, 47),
     'minecraft:block/dark_oak_leaves': (119, 171, 47),
-}
+}'''
 
 def recolor(srci, col):
     #Preserve the alpha value before converting it..

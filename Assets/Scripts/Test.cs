@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using MinecraftClient;
 using MinecraftClient.Resource;
@@ -5,12 +7,38 @@ using MinecraftClient.Mapping;
 using MinecraftClient.Mapping.BlockStatePalettes;
 public class Test : MonoBehaviour
 {
+    private static readonly Color32 TINTCOLOR = new Color32(180, 255, 255, 255);
+
+    private Mesh GetMeshFromData(Tuple<Vector3[], Vector2[], int[], int[]> geoData)
+    {
+        var mesh = new Mesh();
+
+        // Build things up!
+        mesh.vertices  = geoData.Item1;
+        mesh.uv = geoData.Item2;
+        mesh.triangles = geoData.Item4;
+
+        var vertTints  = geoData.Item3;
+        var vertColors = new List<Color32>();
+        foreach (var tint in vertTints)
+        {
+            //if (tint != -1)
+            //    Debug.Log("Ti: " + tint);
+            
+            vertColors.Add(tint == -1 ? Color.white : TINTCOLOR);
+        }
+
+        mesh.colors32 = vertColors.ToArray();
+
+        return mesh;
+
+    }
+
     public void TestBuildModel(string name, BlockModel model, int cullFlags, Vector3 pos)
     {
         // First prepare our model data
         var wrapper = new BlockModelWrapper(model, Vector2Int.zero, false);
         var geometry = new BlockGeometry(wrapper);
-        var geoData = geometry.GetData(cullFlags);
 
         var modelObject = new GameObject(name);
         modelObject.transform.parent = transform;
@@ -20,15 +48,9 @@ public class Test : MonoBehaviour
         var render = modelObject.AddComponent<MeshRenderer>();
 
         // Make and set mesh...
-        var mesh = new Mesh();
-
-        // Build things up!
-        mesh.vertices = geoData.Item1;
-        mesh.uv = geoData.Item2;
-        mesh.triangles = geoData.Item3;
+        Mesh mesh = GetMeshFromData(geometry.GetData(cullFlags));
 
         filter.sharedMesh = mesh;
-
         render.sharedMaterial = BlockTextureManager.atlasMaterial;
 
     }
@@ -51,15 +73,9 @@ public class Test : MonoBehaviour
                 var render = modelObject.AddComponent<MeshRenderer>();
 
                 // Make and set mesh...
-                var mesh = new Mesh();
-
-                // Build things up!
-                mesh.vertices = geoData.Item1;
-                mesh.uv = geoData.Item2;
-                mesh.triangles = geoData.Item3;
+                Mesh mesh = GetMeshFromData(geometry.GetData(cullFlags));
 
                 filter.sharedMesh = mesh;
-
                 render.sharedMaterial = BlockTextureManager.atlasMaterial;
             }
     }
@@ -77,15 +93,9 @@ public class Test : MonoBehaviour
         var render = modelObject.AddComponent<MeshRenderer>();
 
         // Make and set mesh...
-        var mesh = new Mesh();
-
-        // Build things up!
-        mesh.vertices = geoData.Item1;
-        mesh.uv = geoData.Item2;
-        mesh.triangles = geoData.Item3;
+        Mesh mesh = GetMeshFromData(geometry.GetData(cullFlags));
 
         filter.sharedMesh = mesh;
-
         render.sharedMaterial = BlockTextureManager.atlasMaterial;
 
     }

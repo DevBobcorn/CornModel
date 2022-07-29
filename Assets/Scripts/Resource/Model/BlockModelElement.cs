@@ -34,7 +34,7 @@ namespace MinecraftClient.Resource
                     }
                 }
 
-                // TODO rotation and shade
+                // TODO shade
                 if (data.Properties.ContainsKey("rotation"))
                 {
                     var rotData = data.Properties["rotation"];

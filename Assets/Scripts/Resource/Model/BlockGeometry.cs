@@ -12,6 +12,7 @@ namespace MinecraftClient.Resource
 
         public readonly Dictionary<CullDir, List<Vector3>> verticies = new Dictionary<CullDir, List<Vector3>>();
         public readonly Dictionary<CullDir, List<Vector2>> uvs = new Dictionary<CullDir, List<Vector2>>();
+        public readonly Dictionary<CullDir, List<int>> tints = new Dictionary<CullDir, List<int>>();
         public readonly Dictionary<CullDir, List<int>> tris = new Dictionary<CullDir, List<int>>();
 
         public readonly Dictionary<CullDir, int> vertIndexOffset = new Dictionary<CullDir, int>();
@@ -23,6 +24,7 @@ namespace MinecraftClient.Resource
             {
                 verticies.Add(dir, new List<Vector3>());
                 uvs.Add(dir, new List<Vector2>());
+                tints.Add(dir, new List<int>());
                 tris.Add(dir, new List<int>());
                 vertIndexOffset.Add(dir, 0);
             }
@@ -45,11 +47,12 @@ namespace MinecraftClient.Resource
         }
 
         // A '1' bit in cullFlags means shown, while a '0' indicates culled...
-        public Tuple<Vector3[], Vector2[], int[]> GetData(int cullFlags)
+        public Tuple<Vector3[], Vector2[], int[], int[]> GetData(int cullFlags)
         {
             // These things are never culled:
             List<Vector3> verts = verticies[CullDir.NONE];
             List<Vector2> txuvs = uvs[CullDir.NONE];
+            List<int> tintIndcs = tints[CullDir.NONE];
             List<int> triangles = tris[CullDir.NONE];
 
             // First bulk is 'verticies[CullDir.NONE]' which has
@@ -60,6 +63,7 @@ namespace MinecraftClient.Resource
             {
                 verts = verts.Concat(verticies[CullDir.UP]).ToList();
                 txuvs = txuvs.Concat(uvs[CullDir.UP]).ToList();
+                tintIndcs = tintIndcs.Concat(tints[CullDir.UP]).ToList();
                 foreach (var vertIndex in tris[CullDir.UP])
                 {   // Apply extra offset when appending tris list
                     triangles.Add(bulkVertIndexOffset + vertIndex);
@@ -71,6 +75,7 @@ namespace MinecraftClient.Resource
             {
                 verts = verts.Concat(verticies[CullDir.DOWN]).ToList();
                 txuvs = txuvs.Concat(uvs[CullDir.DOWN]).ToList();
+                tintIndcs = tintIndcs.Concat(tints[CullDir.DOWN]).ToList();
                 foreach (var vertIndex in tris[CullDir.DOWN])
                 {   // Apply extra offset when appending tris list
                     triangles.Add(bulkVertIndexOffset + vertIndex);
@@ -82,6 +87,7 @@ namespace MinecraftClient.Resource
             {
                 verts = verts.Concat(verticies[CullDir.SOUTH]).ToList();
                 txuvs = txuvs.Concat(uvs[CullDir.SOUTH]).ToList();
+                tintIndcs = tintIndcs.Concat(tints[CullDir.SOUTH]).ToList();
                 foreach (var vertIndex in tris[CullDir.SOUTH])
                 {   // Apply extra offset when appending tris list
                     triangles.Add(bulkVertIndexOffset + vertIndex);
@@ -93,6 +99,7 @@ namespace MinecraftClient.Resource
             {
                 verts = verts.Concat(verticies[CullDir.NORTH]).ToList();
                 txuvs = txuvs.Concat(uvs[CullDir.NORTH]).ToList();
+                tintIndcs = tintIndcs.Concat(tints[CullDir.NORTH]).ToList();
                 foreach (var vertIndex in tris[CullDir.NORTH])
                 {   // Apply extra offset when appending tris list
                     triangles.Add(bulkVertIndexOffset + vertIndex);
@@ -104,6 +111,7 @@ namespace MinecraftClient.Resource
             {
                 verts = verts.Concat(verticies[CullDir.EAST]).ToList();
                 txuvs = txuvs.Concat(uvs[CullDir.EAST]).ToList();
+                tintIndcs = tintIndcs.Concat(tints[CullDir.EAST]).ToList();
                 foreach (var vertIndex in tris[CullDir.EAST])
                 {   // Apply extra offset when appending tris list
                     triangles.Add(bulkVertIndexOffset + vertIndex);
@@ -115,6 +123,7 @@ namespace MinecraftClient.Resource
             {
                 verts = verts.Concat(verticies[CullDir.WEST]).ToList();
                 txuvs = txuvs.Concat(uvs[CullDir.WEST]).ToList();
+                tintIndcs = tintIndcs.Concat(tints[CullDir.WEST]).ToList();
                 foreach (var vertIndex in tris[CullDir.WEST])
                 {   // Apply extra offset when appending tris list
                     triangles.Add(bulkVertIndexOffset + vertIndex);
@@ -122,7 +131,7 @@ namespace MinecraftClient.Resource
                 bulkVertIndexOffset = verts.Count;
             }
 
-            return Tuple.Create(verts.ToArray(), txuvs.ToArray(), triangles.ToArray());
+            return Tuple.Create(verts.ToArray(), txuvs.ToArray(), tintIndcs.ToArray(), triangles.ToArray());
 
         }
 
@@ -236,6 +245,9 @@ namespace MinecraftClient.Resource
                         break;
                 }
                 
+                // And tint indices..
+                for (int i = 0;i < 4;i++)
+                    tints[cullDir].Add(face.tintIndex);
 
                 // Update vertex offset to current face's cull direction
                 int offset = vertIndexOffset[cullDir];
