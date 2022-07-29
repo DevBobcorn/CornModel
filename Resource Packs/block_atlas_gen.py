@@ -50,7 +50,8 @@ packpath = 'vanilla-1.16.5/assets/'
 namespaces = os.listdir(packpath)
 for nspath in namespaces:
     print('NameSpace: ' + nspath)
-    paths = glob.iglob(packpath + nspath + '/textures/block/*?.png')
+    # Also search sub-folders...
+    paths = glob.iglob(packpath + nspath + '/textures/block/**/*?.png', recursive=True)
 
     pathLen = len(packpath + nspath + '/textures/')
 

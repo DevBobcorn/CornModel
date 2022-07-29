@@ -145,7 +145,9 @@ namespace MinecraftClient.Resource
             if (elem.rotAngle != 0F) // Apply model rotation...
                 Rotations.RotateVertices(ref elemVerts, elem.pivot / MC_VERT_SCALE, elem.axis, -elem.rotAngle, elem.rescale); // TODO Check angle
             
-            if (zyRot != Vector2Int.zero) // Apply state rotation...
+            bool stateRotated = zyRot != Vector2Int.zero;
+
+            if (stateRotated) // Apply state rotation...
                 Rotations.RotateWrapper(ref elemVerts, zyRot);
 
             foreach (var facePair in elem.faces)
@@ -200,10 +202,9 @@ namespace MinecraftClient.Resource
 
                 // This value is mapped only when uvlock is on, according to this block state's
                 // state rotation, and it rotates the area of texture which is used on the face
-                // TODO Implement
-                int areaRot = 0;
+                int uvAreaRot = stateRotated ? uvlockMap[zyRot][facePair.Key] : 0;
 
-                Vector2[] remappedUVs = RemapUVs(face.uv / MC_UV_SCALE, texIdentifier, areaRot);
+                Vector2[] remappedUVs = RemapUVs(face.uv / MC_UV_SCALE, texIdentifier, uvAreaRot);
 
                 // This rotation doesn't change the area of texture used...
                 // See https://minecraft.fandom.com/wiki/Model#Block_models
@@ -249,10 +250,74 @@ namespace MinecraftClient.Resource
 
         }
 
-        private static Vector2[] RemapUVs(Vector4 uvs, ResourceLocation source, int exRot)
+        private static Vector2[] RemapUVs(Vector4 uvs, ResourceLocation source, int areaRot)
         {
-            return BlockTextureManager.GetUVs(source, uvs, exRot);
+            return BlockTextureManager.GetUVs(source, uvs, areaRot);
         }
+
+        private static Dictionary<Vector2Int, Dictionary<FaceDir, int>> CreateUVLockMap()
+        {
+            var areaRotMap = new Dictionary<Vector2Int, Dictionary<FaceDir, int>>();
+
+            for (int roty = 0;roty < 4;roty++)
+            {
+                for (int rotz = 0;rotz < 4;rotz++)
+                {
+                    // Store actual rotation values currently applied to these faces (due to vertex(mesh) rotation)
+                    var localRot = new Dictionary<FaceDir, int>();
+
+                    foreach (FaceDir dir in Enum.GetValues(typeof (FaceDir)))
+                        localRot.Add(dir, 0);
+
+                    switch (rotz)
+                    {
+                        case 0:
+                            localRot[FaceDir.UP]   =  roty;
+                            localRot[FaceDir.DOWN] = -roty;
+                            break;
+                        case 1: // Locally rotate 90 Deg Clockwise
+                            localRot[FaceDir.UP]    =  2;
+                            localRot[FaceDir.DOWN]  =  0;
+                            localRot[FaceDir.WEST]  = -1;
+                            localRot[FaceDir.EAST]  =  1;
+                            localRot[FaceDir.SOUTH] =  roty;
+                            localRot[FaceDir.NORTH] = -roty + 2;
+                            break;
+                        case 2: // Locally rotate 180 Deg
+                            localRot[FaceDir.UP]    = -roty;
+                            localRot[FaceDir.DOWN]  =  roty;
+                            localRot[FaceDir.WEST]  =  2;
+                            localRot[FaceDir.EAST]  =  2;
+                            localRot[FaceDir.SOUTH] =  2;
+                            localRot[FaceDir.NORTH] =  2;
+                            break;
+                        case 3: // Locally rotate 90 Deg Counter-Clockwise
+                            localRot[FaceDir.UP]    =  0;
+                            localRot[FaceDir.DOWN]  =  2;
+                            localRot[FaceDir.WEST]  =  1;
+                            localRot[FaceDir.EAST]  = -1;
+                            localRot[FaceDir.SOUTH] = -roty;
+                            localRot[FaceDir.NORTH] =  roty + 2;
+                            break;
+                    }
+
+                    var result = new Dictionary<FaceDir, int>();
+
+                    // Cancel horizontal texture rotations (front / right / back / left)
+                    foreach (FaceDir dir in Enum.GetValues(typeof (FaceDir)))
+                        result.Add(dir, (8 - localRot.GetValueOrDefault(dir, 0)) % 4);
+
+                    areaRotMap.Add(new Vector2Int(rotz, roty), result);
+
+                }
+                
+            }
+            
+            return areaRotMap;
+
+        }
+
+        private static readonly Dictionary<Vector2Int, Dictionary<FaceDir, int>> uvlockMap = CreateUVLockMap();
 
         private static Dictionary<Vector2Int, Dictionary<CullDir, CullDir>> CreateCullMap()
         {
@@ -261,12 +326,13 @@ namespace MinecraftClient.Resource
 
             for (int roty = 0;roty < 4;roty++)
             {
+                // First shift directions around Y axis...
                 var rotYMapRotated = rotYMap.Skip(roty).Concat(rotYMap.Take(roty)).ToArray();
                 var rotZMap = new CullDir[]{ rotYMapRotated[0], CullDir.DOWN, rotYMapRotated[2], CullDir.UP };
                 for (int rotz = 0;rotz < 4;rotz++)
                 {
                     //Debug.Log("Rotation: z: " + rotx + ", y: " + roty);
-
+                    // Then shift directions around the rotated Z axis...
                     var rotZMapRotated = rotZMap.Skip(rotz).Concat(rotZMap.Take(rotz)).ToArray();
 
                     var rotYRemap = new Dictionary<CullDir, CullDir>(){
