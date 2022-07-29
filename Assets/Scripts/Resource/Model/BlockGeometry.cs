@@ -202,7 +202,7 @@ namespace MinecraftClient.Resource
 
                 // This value is mapped only when uvlock is on, according to this block state's
                 // state rotation, and it rotates the area of texture which is used on the face
-                int uvAreaRot = stateRotated ? uvlockMap[zyRot][facePair.Key] : 0;
+                int uvAreaRot = stateRotated && uvlock ? uvlockMap[zyRot][facePair.Key] : 0;
 
                 Vector2[] remappedUVs = RemapUVs(face.uv / MC_UV_SCALE, texIdentifier, uvAreaRot);
 
