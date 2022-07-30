@@ -44,7 +44,7 @@ namespace MinecraftClient.Resource
 
         private static int GetAtlasOffset(ResourceLocation identifier)
         {
-            if (!initialized) Initialze();
+            EnsureInitialized();
 
             if (blockAtlasTable.ContainsKey(identifier))
                 return blockAtlasTable[identifier];
@@ -52,8 +52,14 @@ namespace MinecraftClient.Resource
             return 0;
         }
 
-        public static Texture2D atlasTexture = new Texture2D(2, 2); // First assign a place holder...
-        public static Material atlasMaterial;
+        private static Texture2D atlasTexture = new Texture2D(2, 2); // First assign a place holder...
+        public static Texture2D AtlasTexture
+        {
+            get {
+                EnsureInitialized();
+                return atlasTexture;
+            }
+        }
 
         public static void EnsureInitialized()
         {
@@ -71,15 +77,6 @@ namespace MinecraftClient.Resource
                 // Set up atlas texture...
                 atlasTexture.LoadImage(File.ReadAllBytes(atlasFilePath));
                 atlasTexture.filterMode = FilterMode.Point;
-
-                // Set up atlas material...
-                atlasMaterial = new Material(Shader.Find("Unicorn/BlockCutout"));
-                atlasMaterial.EnableKeyword("_ALPHATEST_ON");
-                atlasMaterial.SetTexture("_MainTex", atlasTexture);
-                atlasMaterial.SetFloat("_Mode", 1);
-                atlasMaterial.renderQueue = 2450;
-                atlasMaterial.SetFloat("_Glossiness", 0F);
-                atlasMaterial.SetFloat("_Cutoff", 0.75F);
 
                 string jsonText = File.ReadAllText(atlasJsonPath);
                 Json.JSONData atlasJson = Json.ParseJson(jsonText);
@@ -106,4 +103,5 @@ namespace MinecraftClient.Resource
 
         }
     }
+
 }

@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using MinecraftClient;
+using MinecraftClient.Rendering;
 using MinecraftClient.Resource;
 using MinecraftClient.Mapping;
 using MinecraftClient.Mapping.BlockStatePalettes;
+
 public class Test : MonoBehaviour
 {
     private static readonly Color32 TINTCOLOR = new Color32(180, 255, 255, 255);
@@ -22,9 +24,6 @@ public class Test : MonoBehaviour
         var vertColors = new List<Color32>();
         foreach (var tint in vertTints)
         {
-            //if (tint != -1)
-            //    Debug.Log("Ti: " + tint);
-            
             vertColors.Add(tint == -1 ? Color.white : TINTCOLOR);
         }
 
@@ -34,7 +33,7 @@ public class Test : MonoBehaviour
 
     }
 
-    public void TestBuildModel(string name, BlockModel model, int cullFlags, Vector3 pos)
+    public void TestBuildModel(string name, BlockModel model, int cullFlags, Vector3 pos, RenderType renderType)
     {
         // First prepare our model data
         var wrapper = new BlockModelWrapper(model, Vector2Int.zero, false);
@@ -51,7 +50,7 @@ public class Test : MonoBehaviour
         Mesh mesh = GetMeshFromData(geometry.GetData(cullFlags));
 
         filter.sharedMesh = mesh;
-        render.sharedMaterial = BlockTextureManager.atlasMaterial;
+        render.sharedMaterial = MaterialsManager.GetBlockMaterial(renderType);
 
     }
 
@@ -76,27 +75,34 @@ public class Test : MonoBehaviour
                 Mesh mesh = GetMeshFromData(geometry.GetData(cullFlags));
 
                 filter.sharedMesh = mesh;
-                render.sharedMaterial = BlockTextureManager.atlasMaterial;
+                render.sharedMaterial = MaterialsManager.GetBlockMaterial(RenderType.SOLID);
             }
     }
 
-    public void TestBuildState(string name, BlockGeometry geometry, int cullFlags, Vector3 pos)
+    public void TestBuildState(string name, BlockStateModel stateModel, int cullFlags, Vector3 pos)
     {
-        // First prepare our model data
-        var geoData = geometry.GetData(cullFlags);
+        int altitude = 0;
+        foreach (var geometry in stateModel.Geometries)
+        {
+            // First prepare our model data
+            var geoData = geometry.GetData(cullFlags);
 
-        var modelObject = new GameObject(name);
-        modelObject.transform.parent = transform;
-        modelObject.transform.localPosition = pos;
+            var modelObject = new GameObject(name);
+            modelObject.transform.parent = transform;
+            modelObject.transform.localPosition = pos + Vector3.up * altitude;
 
-        var filter = modelObject.AddComponent<MeshFilter>();
-        var render = modelObject.AddComponent<MeshRenderer>();
+            var filter = modelObject.AddComponent<MeshFilter>();
+            var render = modelObject.AddComponent<MeshRenderer>();
 
-        // Make and set mesh...
-        Mesh mesh = GetMeshFromData(geometry.GetData(cullFlags));
+            // Make and set mesh...
+            Mesh mesh = GetMeshFromData(geometry.GetData(cullFlags));
 
-        filter.sharedMesh = mesh;
-        render.sharedMaterial = BlockTextureManager.atlasMaterial;
+            filter.sharedMesh = mesh;
+            render.sharedMaterial = MaterialsManager.GetBlockMaterial(stateModel.RenderType);
+
+            altitude -= 2;
+
+        }
 
     }
 
@@ -108,47 +114,37 @@ public class Test : MonoBehaviour
 
         // Create a new resource pack...
         ResourcePackManager manager = new ResourcePackManager();
+
         ResourcePack pack = new ResourcePack("vanilla-1.16.5");
-        
-        // Load resource pack if valid...
-        if (pack.IsValid)
+        manager.AddPack(pack);
+
+        // Load valid packs...
+        manager.LoadPacks();
+
+        float startTime = Time.realtimeSinceStartup;
+
+        int start = 0, limit = 4096;
+        int count = 0, width = 64;
+        foreach (var item in manager.finalTable)
         {
-            manager.AddPack(pack);
-            manager.LoadPacks();
-
-            float startTime = Time.realtimeSinceStartup;
-
-            int start = 0, limit = 4096;
-            int count = 0, width = 64;
-            foreach (var item in manager.finalTable)
+            int index = count - start;
+            if (index >= 0)
             {
-                int index = count - start;
-                if (index >= 0)
-                {
-                    string stateName = Block.Palette.StatesTable[item.Key].ToString();
+                string stateName = Block.Palette.StatesTable[item.Key].ToString();
 
-                    int height = 0;
-
-                    foreach (var geo in item.Value)
-                    {
-                        if (geo != null)
-                            TestBuildState(stateName, geo, 0b111111, new Vector3((index % width) * 2, height, (index / width) * 2));
-                        height -= 2;
-                    }
-                }
-
-                count++;
-
-                if (count >= start + limit)
-                    break;
-
+                TestBuildState(stateName, item.Value, 0b111111, new Vector3((index % width) * 2, 0, (index / width) * 2));
             }
 
-            TestUVLock("UVLock Test Unit ", manager.modelsTable[ResourceLocation.fromString("block/dir_block")], 0b111111, new Vector3(0, 3, 0));
+            count++;
 
-            Debug.Log("Unity meshes built in " + (Time.realtimeSinceStartup - startTime) + " seconds.");
+            if (count >= start + limit)
+                break;
 
         }
+
+        TestUVLock("UVLock Test Unit ", manager.modelsTable[ResourceLocation.fromString("block/dir_block")], 0b111111, new Vector3(0, 3, 0));
+
+        Debug.Log("Unity meshes built in " + (Time.realtimeSinceStartup - startTime) + " seconds.");
 
     }
 }

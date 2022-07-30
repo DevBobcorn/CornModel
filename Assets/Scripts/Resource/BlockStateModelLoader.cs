@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 using MinecraftClient.Mapping;
@@ -72,7 +73,7 @@ namespace MinecraftClient.Resource
                     if (!manager.finalTable.ContainsKey(stateId) && conditions.check(Block.Palette.StatesTable[stateId]))
                     {
                         // Then this block state belongs to the current variant...
-                        manager.finalTable.Add(stateId, results);
+                        manager.finalTable.Add(stateId, new BlockStateModel(results));
 
                     }
 
@@ -159,7 +160,7 @@ namespace MinecraftClient.Resource
             // Get the table into manager...
             foreach (var resultItem in resultsList)
             {
-                manager.finalTable.Add(resultItem.Key, new List<BlockGeometry>(){ resultItem.Value });
+                manager.finalTable.Add(resultItem.Key, new BlockStateModel(new BlockGeometry[]{ resultItem.Value }.ToList()));
             }
 
         }
