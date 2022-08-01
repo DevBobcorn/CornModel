@@ -50,11 +50,11 @@ public class Test : MonoBehaviour
         Mesh mesh = GetMeshFromData(geometry.GetData(cullFlags));
 
         filter.sharedMesh = mesh;
-        render.sharedMaterial = MaterialsManager.GetBlockMaterial(renderType);
+        render.sharedMaterial = MaterialManager.GetBlockMaterial(renderType);
 
     }
 
-    public void TestUVLock(string name, BlockModel model, int cullFlags, Vector3 pos)
+    public void TestUVLock(string name, BlockModel model, RenderType type, int cullFlags, Vector3 pos)
     {
         for (int yrot = 0;yrot < 4;yrot++)
             for (int zrot = 0;zrot < 4;zrot++)
@@ -75,7 +75,7 @@ public class Test : MonoBehaviour
                 Mesh mesh = GetMeshFromData(geometry.GetData(cullFlags));
 
                 filter.sharedMesh = mesh;
-                render.sharedMaterial = MaterialsManager.GetBlockMaterial(RenderType.SOLID);
+                render.sharedMaterial = MaterialManager.GetBlockMaterial(type);
             }
     }
 
@@ -98,7 +98,7 @@ public class Test : MonoBehaviour
             Mesh mesh = GetMeshFromData(geometry.GetData(cullFlags));
 
             filter.sharedMesh = mesh;
-            render.sharedMaterial = MaterialsManager.GetBlockMaterial(stateModel.RenderType);
+            render.sharedMaterial = MaterialManager.GetBlockMaterial(stateModel.RenderType);
 
             altitude -= 2;
 
@@ -141,7 +141,8 @@ public class Test : MonoBehaviour
 
         }
 
-        TestUVLock("UVLock Test Unit ", manager.modelsTable[ResourceLocation.fromString("block/dir_block")], 0b111111, new Vector3(0, 3, 0));
+        TestUVLock("UVLock Test Unit Lower ", manager.modelsTable[ResourceLocation.fromString("block/dir_block")],            RenderType.SOLID,       0b111111, new Vector3(0, 3, 0));
+        TestUVLock("UVLock Test Unit Upper ", manager.modelsTable[ResourceLocation.fromString("block/orange_stained_glass")], RenderType.TRANSLUCENT, 0b111111, new Vector3(0, 6, 0));
 
         Debug.Log("Unity meshes built in " + (Time.realtimeSinceStartup - startTime) + " seconds.");
 

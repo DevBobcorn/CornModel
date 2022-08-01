@@ -2,11 +2,14 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
+using MinecraftClient.Rendering;
+
 namespace MinecraftClient.Resource
 {
     public class BlockTextureManager
     {
         private static Dictionary<ResourceLocation, int> blockAtlasTable = new Dictionary<ResourceLocation, int>();
+        private static Dictionary<RenderType, int> plcboAtlasTable       = new Dictionary<RenderType, int>();
         private static bool initialized = false;
 
         public static Vector2[] GetUVs(ResourceLocation identifier, Vector4 part, int areaRot)
@@ -61,6 +64,15 @@ namespace MinecraftClient.Resource
             }
         }
 
+        private static Texture2D plcboTexture = new Texture2D(2, 2); // First assign a place holder...
+        public static Texture2D PlcboTexture
+        {
+            get {
+                EnsureInitialized();
+                return plcboTexture;
+            }
+        }
+
         public static void EnsureInitialized()
         {
             if (!initialized) Initialze();
@@ -69,10 +81,12 @@ namespace MinecraftClient.Resource
         private static void Initialze()
         {
             Debug.Log("Read and initialize Block Atlas table...");
-            string atlasFilePath = ResourcePackManager.GetPacksDirectory() + "/block_atlas.png";
-            string atlasJsonPath = ResourcePackManager.GetPacksDirectory() + "/block_atlas_dict.json";
+            string atlasFilePath = PathHelper.GetPacksDirectory() + "/block_atlas.png";
+            string atlasJsonPath = PathHelper.GetPacksDirectory() + "/block_atlas_dict.json";
 
-            if (File.Exists(atlasJsonPath) && File.Exists(atlasFilePath))
+            string plcboFilePath = PathHelper.GetPacksDirectory() + "/block_atlas_placebo.png";
+
+            if (File.Exists(atlasJsonPath) && File.Exists(atlasFilePath) && File.Exists(plcboFilePath))
             {
                 // Set up atlas texture...
                 atlasTexture.LoadImage(File.ReadAllBytes(atlasFilePath));
@@ -93,15 +107,24 @@ namespace MinecraftClient.Resource
                     }
                 }
 
+                plcboTexture.LoadImage(File.ReadAllBytes(plcboFilePath));
+                plcboTexture.filterMode = FilterMode.Point;
+
+                plcboAtlasTable.Add(RenderType.SOLID,         0);
+                plcboAtlasTable.Add(RenderType.CUTOUT,        1);
+                plcboAtlasTable.Add(RenderType.CUTOUT_MIPPED, 2);
+                plcboAtlasTable.Add(RenderType.TRANSLUCENT,   3);
+
             }
             else
             {
-                Debug.LogWarning("Texture atlas not available at " + atlasJsonPath + " and " + atlasFilePath);
+                Debug.LogWarning("Texture files not all available!");
             }
 
             initialized = true;
 
         }
+        
     }
 
 }
