@@ -13,6 +13,11 @@ namespace MinecraftClient.Mapping
         public readonly ResourceLocation blockId; // Something like 'minecraft:grass_block'
         public readonly Dictionary<string, string> props;
 
+        public bool NoCollision = false;
+        public bool NoOcclusion = false;
+        public bool InWater = false;
+        public bool LikeAir = false;
+
         public static BlockState fromString(string state)
         {
             var props = new Dictionary<string, string>();

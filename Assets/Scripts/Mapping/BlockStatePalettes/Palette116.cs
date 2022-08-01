@@ -7,6 +7,11 @@ namespace MinecraftClient.Mapping.BlockStatePalettes
             return "blocks-1.16.json";
         }
 
+        protected override string GetBlockListsFile()
+        {
+            return "block_lists-1.16.json";
+        }
+
     }
 
 }

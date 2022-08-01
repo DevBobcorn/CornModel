@@ -110,7 +110,6 @@ public class Test : MonoBehaviour
     {
         // First load all possible Block States...
         Block.Palette = new Palette116();
-        Block.Palette.ReadBlockStates();
 
         // Create a new resource pack...
         ResourcePackManager manager = new ResourcePackManager();
