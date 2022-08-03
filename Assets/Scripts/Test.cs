@@ -79,7 +79,7 @@ public class Test : MonoBehaviour
             }
     }
 
-    public void TestBuildState(string name, BlockStateModel stateModel, int cullFlags, Vector3 pos)
+    public void TestBuildState(string name, int stateId, BlockStateModel stateModel, int cullFlags, Vector3 pos)
     {
         int altitude = 0;
         foreach (var geometry in stateModel.Geometries)
@@ -98,7 +98,7 @@ public class Test : MonoBehaviour
             Mesh mesh = GetMeshFromData(geometry.GetData(cullFlags));
 
             filter.sharedMesh = mesh;
-            render.sharedMaterial = MaterialManager.GetBlockMaterial(stateModel.RenderType);
+            render.sharedMaterial = MaterialManager.GetBlockMaterial(Block.Palette.GetRenderType(stateId));
 
             altitude -= 2;
 
@@ -131,7 +131,7 @@ public class Test : MonoBehaviour
             {
                 string stateName = Block.Palette.StatesTable[item.Key].ToString();
 
-                TestBuildState(stateName, item.Value, 0b111111, new Vector3((index % width) * 2, 0, (index / width) * 2));
+                TestBuildState(stateName, item.Key, item.Value, 0b111111, new Vector3((index % width) * 2, 0, (index / width) * 2));
             }
 
             count++;

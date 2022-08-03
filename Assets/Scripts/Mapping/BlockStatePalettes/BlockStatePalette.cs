@@ -206,25 +206,18 @@ namespace MinecraftClient.Mapping.BlockStatePalettes
                     string renderTypeText = File.ReadAllText(renderTypePath);
                     var renderTypes = Json.ParseJson(renderTypeText);
 
-                    var lookup = Block.Palette?.StateListTable;
-
-                    if (lookup is null)
-                    {
-                        Debug.Log("Block states not loaded when loading render types!");
-                        return;
-                    }
-
                     foreach (var typeItem in renderTypes.Properties)
                     {
                         var blockId = ResourceLocation.fromString(typeItem.Key);
 
-                        if (lookup.ContainsKey(blockId))
+                        if (stateListTable.ContainsKey(blockId))
                         {
-                            foreach (var stateId in lookup[blockId])
+                            foreach (var stateId in stateListTable[blockId])
                             {
-                                if (renderTypeTable.ContainsKey(stateId))
+                                if (!renderTypeTable.ContainsKey(stateId))
                                 {
-                                    renderTypeTable[stateId] =
+                                    renderTypeTable.Add(
+                                        stateId,
                                         typeItem.Value.StringValue.ToLower() switch
                                         {
                                             "solid"         => RenderType.SOLID,
@@ -233,9 +226,12 @@ namespace MinecraftClient.Mapping.BlockStatePalettes
                                             "translucent"   => RenderType.TRANSLUCENT,
 
                                             _               => RenderType.SOLID
-                                        };
+                                        }
+                                    );
 
                                 }
+                                else
+                                    Debug.LogWarning("Render type of " + statesTable[stateId].ToString() + " registered more than once!");
 
                             }
                         }

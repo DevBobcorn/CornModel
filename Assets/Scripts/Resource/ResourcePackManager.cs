@@ -10,21 +10,6 @@ namespace MinecraftClient.Resource
 {
     public class ResourcePackManager
     {
-        public static string GetRootDirectory()
-        {
-            return Directory.GetParent(Application.dataPath).ToString().Replace('\\', '/');
-        }
-
-        public static string GetPacksDirectory()
-        {
-            return Directory.GetParent(Application.dataPath).ToString().Replace('\\', '/') + "/Resource Packs";
-        }
-
-        public static string GetPackDirectoryNamed(string packName)
-        {
-            return Directory.GetParent(Application.dataPath).ToString().Replace('\\', '/') + "/Resource Packs/" + packName;
-        }
-
         // Identifier -> Texture path
         public readonly Dictionary<ResourceLocation, string> textureTable = new Dictionary<ResourceLocation, string>();
 
@@ -75,56 +60,6 @@ namespace MinecraftClient.Resource
                     pack.BuildStateGeometries(this);
                 }
                 
-            }
-
-            // Load and apply block render types...
-            string renderTypePath = GetPacksDirectory() + "/block_render_type.json";
-            if (File.Exists(renderTypePath))
-            {
-                try
-                {
-                    string renderTypeText = File.ReadAllText(renderTypePath);
-                    var renderTypes = Json.ParseJson(renderTypeText);
-
-                    var lookup = Block.Palette.StateListTable;
-
-                    foreach (var typeItem in renderTypes.Properties)
-                    {
-                        var blockId = ResourceLocation.fromString(typeItem.Key);
-
-                        if (lookup.ContainsKey(blockId))
-                        {
-                            foreach (var stateId in lookup[blockId])
-                            {
-                                if (finalTable.ContainsKey(stateId))
-                                {
-                                    finalTable[stateId].SetRenderType(
-                                        typeItem.Value.StringValue.ToLower() switch
-                                        {
-                                            "solid"         => RenderType.SOLID,
-                                            "cutout"        => RenderType.CUTOUT,
-                                            "cutout_mipped" => RenderType.CUTOUT_MIPPED,
-                                            "translucent"   => RenderType.TRANSLUCENT,
-
-                                            _               => RenderType.SOLID
-                                        }
-                                    );
-                                }
-
-                            }
-                        }
-
-                    }
-
-                }
-                catch (Exception e)
-                {
-                    Debug.LogWarning("Failed to load block render types: " + e.Message);
-                }
-            }
-            else
-            {
-                Debug.LogWarning("Block render type definitions not found at " + renderTypePath);
             }
 
             Debug.Log("Resource packs loaded in " + (Time.realtimeSinceStartup - startTime) + " seconds.");

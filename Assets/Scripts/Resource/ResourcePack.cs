@@ -17,7 +17,7 @@ namespace MinecraftClient.Resource
             packName = name;
 
             // Read meta file...
-            DirectoryInfo packDir = new DirectoryInfo(ResourcePackManager.GetPackDirectoryNamed(packName));
+            DirectoryInfo packDir = new DirectoryInfo(PathHelper.GetPackDirectoryNamed(packName));
 
             if (packDir.Exists)
             {
@@ -58,7 +58,7 @@ namespace MinecraftClient.Resource
             if (isValid)
             {
                 // Assets folder...
-                DirectoryInfo assetsDir = new DirectoryInfo(ResourcePackManager.GetPackDirectoryNamed(packName) + "/assets");
+                DirectoryInfo assetsDir = new DirectoryInfo(PathHelper.GetPackDirectoryNamed(packName) + "/assets");
                 if (assetsDir.Exists)
                 {
                     // Load textures and models
@@ -121,7 +121,7 @@ namespace MinecraftClient.Resource
             if (Block.Palette.BlockStatesReady && isValid)
             {
                 // Assets folder...
-                DirectoryInfo assetsDir = new DirectoryInfo(ResourcePackManager.GetPackDirectoryNamed(packName) + "/assets");
+                DirectoryInfo assetsDir = new DirectoryInfo(PathHelper.GetPackDirectoryNamed(packName) + "/assets");
                 if (assetsDir.Exists)
                 {
                     foreach (var blockPair in Block.Palette.StateListTable)
