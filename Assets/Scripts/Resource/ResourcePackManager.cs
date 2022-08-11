@@ -1,10 +1,7 @@
-using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 
 using MinecraftClient.Mapping;
-using MinecraftClient.Rendering;
 
 namespace MinecraftClient.Resource
 {
@@ -60,6 +57,17 @@ namespace MinecraftClient.Resource
                     pack.BuildStateGeometries(this);
                 }
                 
+            }
+
+            // Perform integrity check...
+            var statesTable = Block.Palette.StatesTable;
+
+            foreach (var stateItem in statesTable)
+            {
+                if (!finalTable.ContainsKey(stateItem.Key))
+                {
+                    Debug.LogWarning("Model for " + stateItem.Value.ToString() + "(state Id " + stateItem.Key + ") not loaded!");
+                }
             }
 
             Debug.Log("Resource packs loaded in " + (Time.realtimeSinceStartup - startTime) + " seconds.");

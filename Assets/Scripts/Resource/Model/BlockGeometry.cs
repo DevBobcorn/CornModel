@@ -47,6 +47,110 @@ namespace MinecraftClient.Resource
         }
 
         // A '1' bit in cullFlags means shown, while a '0' indicates culled...
+        public Tuple<Vector3[], Vector2[], int[], int[]> GetDataForChunk(int startVertOffset, Vector3 posOffset, int cullFlags)
+        {
+            List<Vector3> verts = new List<Vector3>();
+            List<Vector2> txuvs = new List<Vector2>();
+            List<int> tintIndcs = new List<int>();
+            List<int> triangles = new List<int>();
+
+            // These things are never culled:
+            int bulkVertIndexOffset = startVertOffset;
+
+            foreach (var vertex in verticies[CullDir.NONE])
+                verts.Add(vertex + posOffset);
+            txuvs = txuvs.Concat(uvs[CullDir.NONE]).ToList();
+            tintIndcs = tintIndcs.Concat(tints[CullDir.NONE]).ToList();
+            foreach (var vertIndex in tris[CullDir.NONE])
+            {   // Apply extra offset when appending tris list
+                triangles.Add(bulkVertIndexOffset + vertIndex);
+            }
+            
+            bulkVertIndexOffset = startVertOffset + verts.Count;
+
+            if ((cullFlags & (1 << 0)) > 0) // 1st bit on, Unity +Y Shown (Up)
+            {
+                foreach (var vertex in verticies[CullDir.UP])
+                    verts.Add(vertex + posOffset);
+                txuvs = txuvs.Concat(uvs[CullDir.UP]).ToList();
+                tintIndcs = tintIndcs.Concat(tints[CullDir.UP]).ToList();
+                foreach (var vertIndex in tris[CullDir.UP])
+                {   // Apply extra offset when appending tris list
+                    triangles.Add(bulkVertIndexOffset + vertIndex);
+                }
+                bulkVertIndexOffset = startVertOffset + verts.Count;
+            }
+
+            if ((cullFlags & (1 << 1)) > 0) // 2nd bit on, Unity -Y Shown (Down)
+            {
+                foreach (var vertex in verticies[CullDir.DOWN])
+                    verts.Add(vertex + posOffset);
+                txuvs = txuvs.Concat(uvs[CullDir.DOWN]).ToList();
+                tintIndcs = tintIndcs.Concat(tints[CullDir.DOWN]).ToList();
+                foreach (var vertIndex in tris[CullDir.DOWN])
+                {   // Apply extra offset when appending tris list
+                    triangles.Add(bulkVertIndexOffset + vertIndex);
+                }
+                bulkVertIndexOffset = startVertOffset + verts.Count;
+            }
+
+            if ((cullFlags & (1 << 2)) > 0) // 3rd bit on, Unity +X Shown (South)
+            {
+                foreach (var vertex in verticies[CullDir.SOUTH])
+                    verts.Add(vertex + posOffset);
+                txuvs = txuvs.Concat(uvs[CullDir.SOUTH]).ToList();
+                tintIndcs = tintIndcs.Concat(tints[CullDir.SOUTH]).ToList();
+                foreach (var vertIndex in tris[CullDir.SOUTH])
+                {   // Apply extra offset when appending tris list
+                    triangles.Add(bulkVertIndexOffset + vertIndex);
+                }
+                bulkVertIndexOffset = startVertOffset + verts.Count;
+            }
+
+            if ((cullFlags & (1 << 3)) > 0) // 4th bit on, Unity -X Shown (North)
+            {
+                foreach (var vertex in verticies[CullDir.NORTH])
+                    verts.Add(vertex + posOffset);
+                txuvs = txuvs.Concat(uvs[CullDir.NORTH]).ToList();
+                tintIndcs = tintIndcs.Concat(tints[CullDir.NORTH]).ToList();
+                foreach (var vertIndex in tris[CullDir.NORTH])
+                {   // Apply extra offset when appending tris list
+                    triangles.Add(bulkVertIndexOffset + vertIndex);
+                }
+                bulkVertIndexOffset = startVertOffset + verts.Count;
+            }
+
+            if ((cullFlags & (1 << 4)) > 0) // 5th bit on, Unity +Z Shown (East)
+            {
+                foreach (var vertex in verticies[CullDir.EAST])
+                    verts.Add(vertex + posOffset);
+                txuvs = txuvs.Concat(uvs[CullDir.EAST]).ToList();
+                tintIndcs = tintIndcs.Concat(tints[CullDir.EAST]).ToList();
+                foreach (var vertIndex in tris[CullDir.EAST])
+                {   // Apply extra offset when appending tris list
+                    triangles.Add(bulkVertIndexOffset + vertIndex);
+                }
+                bulkVertIndexOffset = startVertOffset + verts.Count;
+            }
+
+            if ((cullFlags & (1 << 5)) > 0) // 6th bit on, Unity -Z Shown (West)
+            {
+                foreach (var vertex in verticies[CullDir.WEST])
+                    verts.Add(vertex + posOffset);
+                txuvs = txuvs.Concat(uvs[CullDir.WEST]).ToList();
+                tintIndcs = tintIndcs.Concat(tints[CullDir.WEST]).ToList();
+                foreach (var vertIndex in tris[CullDir.WEST])
+                {   // Apply extra offset when appending tris list
+                    triangles.Add(bulkVertIndexOffset + vertIndex);
+                }
+                bulkVertIndexOffset = startVertOffset + verts.Count;
+            }
+
+            return Tuple.Create(verts.ToArray(), txuvs.ToArray(), tintIndcs.ToArray(), triangles.ToArray());
+
+        }
+
+        // A '1' bit in cullFlags means shown, while a '0' indicates culled...
         public Tuple<Vector3[], Vector2[], int[], int[]> GetData(int cullFlags)
         {
             // These things are never culled:

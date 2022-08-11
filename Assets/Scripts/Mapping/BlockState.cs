@@ -17,6 +17,7 @@ namespace MinecraftClient.Mapping
         public bool NoOcclusion = false;
         public bool InWater = false;
         public bool LikeAir = false;
+        public bool FullSolid = true;
 
         public static BlockState fromString(string state)
         {

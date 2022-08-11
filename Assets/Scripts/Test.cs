@@ -131,7 +131,7 @@ public class Test : MonoBehaviour
             {
                 string stateName = Block.Palette.StatesTable[item.Key].ToString();
 
-                TestBuildState(stateName, item.Key, item.Value, 0b111111, new Vector3((index % width) * 2, 0, (index / width) * 2));
+                TestBuildState(item.Key.ToString() + " " + stateName, item.Key, item.Value, 0b111111, new Vector3((index % width) * 2, 0, (index / width) * 2));
             }
 
             count++;
