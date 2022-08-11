@@ -1,8 +1,11 @@
 from PIL import Image, ImageOps
 import os, glob, json
 
-recolor_dict = { }
-'''{
+recolor_dict = {
+    'minecraft:block/water_flow': (63, 118, 228),
+    'minecraft:block/water_overlay': (63, 118, 228),
+    'minecraft:block/water_still': (63, 118, 228),
+    
     'minecraft:block/birch_leaves': (128, 167, 55),
     'minecraft:block/spruce_leaves': (97, 153, 97),
     'minecraft:block/lily_pad': (32, 128, 48),
@@ -21,7 +24,9 @@ recolor_dict = { }
     'minecraft:block/acacia_leaves': (119, 171, 47),
     'minecraft:block/jungle_leaves': (119, 171, 47),
     'minecraft:block/dark_oak_leaves': (119, 171, 47),
-}'''
+}
+
+skip_list = []
 
 def recolor(srci, col):
     #Preserve the alpha value before converting it..
@@ -59,10 +64,20 @@ for nspath in namespaces:
     for path in paths:
         texname = nspath + ':' + path[pathLen:-4]
         texname = texname.replace('//', '/').replace('\\', '/')
+
+        if texname in skip_list:
+            print('Skipping ' + texname)
+            continue
+        
         print('Processing ' + texname)
         #print('\t\t\t[\"' + texname + '\"] = '+ str(offset) + ',')
         atlas_dict[texname] = offset
         tex = Image.open(path).convert('RGBA')
+
+        # Rescale if necessary
+        if tex.width != rct:
+            print('Rescaling ' + texname + ' to make its width match ' + str(rct))
+            tex = tex.resize((rct, round(tex.height / tex.width) * rct))
 
         # Crop if necessary
         if tex.width != tex.height:
