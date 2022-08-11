@@ -82,6 +82,7 @@ namespace MinecraftClient.Mapping.BlockStatePalettes
             var noCollision = new List<ResourceLocation>();
             var waterBlocks = new List<ResourceLocation>();
             var emptyBlocks = new List<ResourceLocation>();
+            var alwaysFulls = new List<ResourceLocation>();
 
             Json.JSONData spLists = Json.ParseJson(File.ReadAllText(listsPath, Encoding.UTF8));
             Debug.Log("Reading special lists from " + listsPath);
@@ -107,6 +108,14 @@ namespace MinecraftClient.Mapping.BlockStatePalettes
                 foreach (var block in spLists.Properties["water_blocks"].DataArray)
                 {
                     waterBlocks.Add(ResourceLocation.fromString(block.StringValue));
+                }
+            }
+
+            if (spLists.Properties.ContainsKey("always_fulls"))
+            {
+                foreach (var block in spLists.Properties["always_fulls"].DataArray)
+                {
+                    alwaysFulls.Add(ResourceLocation.fromString(block.StringValue));
                 }
             }
 
@@ -149,24 +158,23 @@ namespace MinecraftClient.Mapping.BlockStatePalettes
 
                         var inWater = waterBlocks.Contains(blockId);
 
-                        if (!inWater)
-                            foreach (var prop in state.Properties["properties"].Properties)
-                            {
-                                props.Add(prop.Key, prop.Value.StringValue);
+                        foreach (var prop in state.Properties["properties"].Properties)
+                        {
+                            props.Add(prop.Key, prop.Value.StringValue);
 
-                                if (prop.Key == "waterlogged" && prop.Value.StringValue == "true")
-                                {
-                                    inWater = true;
-                                    break;
-                                }
-                            }
+                            // Special proc for waterlogged property...
+                            if (prop.Key == "waterlogged" && prop.Value.StringValue == "true")
+                                inWater = true;
+
+                        }
 
                         statesTable[stateId] = new BlockState(blockId, props)
                         {
                             NoOcclusion = noOcclusion.Contains(blockId),
                             NoCollision = noCollision.Contains(blockId),
                             InWater = inWater,
-                            LikeAir = emptyBlocks.Contains(blockId)
+                            LikeAir = emptyBlocks.Contains(blockId),
+                            FullSolid = (!noOcclusion.Contains(blockId)) && alwaysFulls.Contains(blockId)
                         };
                     }
                     else
@@ -176,7 +184,8 @@ namespace MinecraftClient.Mapping.BlockStatePalettes
                             NoOcclusion = noOcclusion.Contains(blockId),
                             NoCollision = noCollision.Contains(blockId),
                             InWater = waterBlocks.Contains(blockId),
-                            LikeAir = emptyBlocks.Contains(blockId)
+                            LikeAir = emptyBlocks.Contains(blockId),
+                            FullSolid = (!noOcclusion.Contains(blockId)) && alwaysFulls.Contains(blockId)
                         };
                     }
 
