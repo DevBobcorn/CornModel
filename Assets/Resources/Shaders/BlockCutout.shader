@@ -1,25 +1,32 @@
-Shader "Unicorn/BlockSolid" {
+Shader "Unicorn/BlockCutout" {
     Properties {
         _Color ("Color", Color) = (1,1,1,1)
         _MainTex ("Albedo (RGB)", 2D) = "white" {}
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
+        _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
     }
     SubShader {
-        Tags { "RenderType"="Opaque" }
+        Tags
+        {
+            "Queue" = "AlphaTest"
+            "IgnoreProjector" = "True"
+            "RenderType" = "TransparentCutout"
+        }
         LOD 200
         
         CGPROGRAM
-        #pragma surface surf Standard vertex:vert fullforwardshadows
+        #pragma surface surf Standard vertex:vert alphatest:_Cutoff
         #pragma target 3.0
+
         struct Input {
             float2 uv_MainTex;
             float3 vertexColor; // Vertex color stored here by vert() method
         };
         
         struct v2f {
-        float4 pos : SV_POSITION;
-        fixed4 color : COLOR;
+            float4 pos : SV_POSITION;
+            fixed4 color : COLOR;
         };
 
         void vert (inout appdata_full v, out Input o)
@@ -46,5 +53,5 @@ Shader "Unicorn/BlockSolid" {
         }
         ENDCG
     } 
-    FallBack "Diffuse"
+    FallBack "Transparent/Cutout/VertexLit"
 }

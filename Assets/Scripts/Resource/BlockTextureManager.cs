@@ -55,15 +55,6 @@ namespace MinecraftClient.Resource
             return 0;
         }
 
-        private static Texture2D atlasTexture = new Texture2D(2, 2); // First assign a place holder...
-        public static Texture2D AtlasTexture
-        {
-            get {
-                EnsureInitialized();
-                return atlasTexture;
-            }
-        }
-
         private static Texture2D plcboTexture = new Texture2D(2, 2); // First assign a place holder...
         public static Texture2D PlcboTexture
         {
@@ -71,6 +62,25 @@ namespace MinecraftClient.Resource
                 EnsureInitialized();
                 return plcboTexture;
             }
+        }
+
+        private static Texture2D[] atlasTexture = new Texture2D[]
+        { 
+            new Texture2D(2, 2),
+            new Texture2D(2, 2)
+        };
+        public static Texture2D GetAtlasTexture(RenderType type)
+        {
+            EnsureInitialized();
+            return type switch
+            {
+                RenderType.CUTOUT        => atlasTexture[0],
+                RenderType.CUTOUT_MIPPED => atlasTexture[1],
+                RenderType.SOLID         => atlasTexture[0],
+                RenderType.TRANSLUCENT   => atlasTexture[0],
+
+                _                        => atlasTexture[0]
+            };
         }
 
         public static void EnsureInitialized()
@@ -88,9 +98,14 @@ namespace MinecraftClient.Resource
 
             if (File.Exists(atlasJsonPath) && File.Exists(atlasFilePath) && File.Exists(plcboFilePath))
             {
-                // Set up atlas texture...
-                atlasTexture.LoadImage(File.ReadAllBytes(atlasFilePath));
-                atlasTexture.filterMode = FilterMode.Point;
+                // Set up atlas textures...
+                for (int i = 0;i < atlasTexture.Length;i++)
+                {
+                    atlasTexture[i].LoadImage(File.ReadAllBytes(atlasFilePath));
+                    atlasTexture[i].filterMode = FilterMode.Point;
+                }
+                
+                atlasTexture[1].mipMapBias = -1F;
 
                 string jsonText = File.ReadAllText(atlasJsonPath);
                 Json.JSONData atlasJson = Json.ParseJson(jsonText);

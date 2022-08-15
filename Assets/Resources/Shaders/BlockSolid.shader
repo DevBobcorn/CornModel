@@ -1,10 +1,9 @@
-Shader "Unicorn/BlockCutout" {
+Shader "Unicorn/BlockSolid" {
     Properties {
         _Color ("Color", Color) = (1,1,1,1)
         _MainTex ("Albedo (RGB)", 2D) = "white" {}
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
-        _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
     }
     SubShader {
         Tags { "RenderType"="Opaque" }
@@ -19,8 +18,8 @@ Shader "Unicorn/BlockCutout" {
         };
         
         struct v2f {
-        float4 pos : SV_POSITION;
-        fixed4 color : COLOR;
+            float4 pos : SV_POSITION;
+            fixed4 color : COLOR;
         };
 
         void vert (inout appdata_full v, out Input o)
@@ -34,7 +33,6 @@ Shader "Unicorn/BlockCutout" {
         half _Glossiness;
         half _Metallic;
         fixed4 _Color;
-        half _Cutoff;
 
         void surf (Input IN, inout SurfaceOutputStandard o) 
         {
@@ -44,7 +42,6 @@ Shader "Unicorn/BlockCutout" {
             // Metallic and smoothness come from slider variables
             o.Metallic = _Metallic;
             o.Smoothness = _Glossiness;
-            clip(c.a - _Cutoff);
             o.Alpha = c.a;
         }
         ENDCG

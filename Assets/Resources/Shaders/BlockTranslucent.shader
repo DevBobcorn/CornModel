@@ -18,8 +18,8 @@ Shader "Unicorn/BlockTranslucent" {
         };
         
         struct v2f {
-        float4 pos : SV_POSITION;
-        fixed4 color : COLOR;
+            float4 pos : SV_POSITION;
+            fixed4 color : COLOR;
         };
 
         void vert (inout appdata_full v, out Input o)
@@ -46,5 +46,5 @@ Shader "Unicorn/BlockTranslucent" {
         }
         ENDCG
     } 
-    FallBack "Diffuse"
+    FallBack "Transparent/VertexLit"
 }
