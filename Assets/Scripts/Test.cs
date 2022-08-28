@@ -37,7 +37,7 @@ public class Test : MonoBehaviour
     {
         // First prepare our model data
         var wrapper = new BlockModelWrapper(model, Vector2Int.zero, false);
-        var geometry = new BlockGeometry(wrapper);
+        var geometry = new BlockGeometry(wrapper).Finalize();
 
         var modelObject = new GameObject(name);
         modelObject.transform.parent = transform;
@@ -61,7 +61,7 @@ public class Test : MonoBehaviour
             {
                 // First prepare our model data
                 var wrapper = new BlockModelWrapper(model, new Vector2Int(zrot, yrot), false);
-                var geometry = new BlockGeometry(wrapper);
+                var geometry = new BlockGeometry(wrapper).Finalize();
                 var geoData = geometry.GetData(cullFlags);
 
                 var modelObject = new GameObject(name + " yr=" + yrot + ", zr=" + zrot);
