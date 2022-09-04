@@ -13,10 +13,10 @@ namespace MinecraftClient.Resource
         public const float MC_VERT_SCALE = 16F;
         public const float MC_UV_SCALE = 16F;
 
-        public readonly Dictionary<CullDir, List<float3>> verticies = new();
+        public readonly Dictionary<CullDir, List<float3>> verticies   = new();
         public readonly Dictionary<CullDir, List<uint>> triangles     = new();
-        public readonly Dictionary<CullDir, List<float2>> uvs       = new();
-        public readonly Dictionary<CullDir, List<int>> tintIndices   = new();
+        public readonly Dictionary<CullDir, List<float2>> uvs         = new();
+        public readonly Dictionary<CullDir, List<int>> tintIndices    = new();
 
         public readonly Dictionary<CullDir, uint> vertIndexOffset     = new();
 
@@ -49,10 +49,10 @@ namespace MinecraftClient.Resource
 
         }
 
-        private Dictionary<CullDir, float3[]> vertexArrs = new();
+        private Dictionary<CullDir, float3[]> vertexArrs   = new();
         private Dictionary<CullDir, uint[]>   triangleArrs = new();
-        private Dictionary<CullDir, float2[]> txuvArrs   = new();
-        private Dictionary<CullDir, int[]>     tintArrs   = new();
+        private Dictionary<CullDir, float2[]> txuvArrs     = new();
+        private Dictionary<CullDir, int[]>    tintArrs     = new();
 
         public BlockGeometry Finalize()
         {
@@ -168,7 +168,7 @@ namespace MinecraftClient.Resource
             if (elem.rotAngle != 0F) // Apply model rotation...
                 Rotations.RotateVertices(ref elemVerts, elem.pivot / MC_VERT_SCALE, elem.axis, -elem.rotAngle, elem.rescale); // TODO Check angle
             
-            bool stateRotated = zyRot.x != 0 && zyRot.y != 0;
+            bool stateRotated = zyRot.x != 0 || zyRot.y != 0;
 
             if (stateRotated) // Apply state rotation...
                 Rotations.RotateWrapper(ref elemVerts, zyRot);
