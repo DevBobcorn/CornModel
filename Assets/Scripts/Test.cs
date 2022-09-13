@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Collections;
 using Unity.Mathematics;
+using TMPro;
 
 using MinecraftClient;
 using MinecraftClient.Rendering;
@@ -15,6 +16,8 @@ public class Test : MonoBehaviour
     private static readonly Color32 TINTCOLOR = new Color32(180, 255, 255, 255);
 
     private readonly LoadStateInfo loadStateInfo = new();
+
+    public TMP_Text infoText;
 
     public void TestBuildState(string name, int stateId, BlockStateModel stateModel, int cullFlags, float3 pos)
     {
@@ -153,12 +156,23 @@ public class Test : MonoBehaviour
 
         }
 
-        Debug.Log($"Minecraft block meshes built in {Time.realtimeSinceStartup - startTime} seconds.");
+        loadStateInfo.infoText = $"Minecraft block meshes built in {Time.realtimeSinceStartup - startTime} seconds.";
     }
 
     void Start()
     {
         StartCoroutine(DoBuild("1.16", "1.16.5"));
+
+    }
+
+    void Update()
+    {
+        if (infoText is not null)
+        {
+            if (infoText.text != loadStateInfo.infoText)
+                infoText.text = loadStateInfo.infoText;
+
+        }
 
     }
 
