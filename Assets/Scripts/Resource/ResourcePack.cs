@@ -1,3 +1,4 @@
+using System.Collections;
 using System.IO;
 using UnityEngine;
 
@@ -33,7 +34,7 @@ namespace MinecraftClient.Resource
                         if (packData.Properties.ContainsKey("pack_format"))
                         {
                             string packFormat = packData.Properties["pack_format"].StringValue;
-                            Debug.Log("Pack " + packName + " is valid, with pack format " + packFormat);
+                            Debug.Log("Pack " + packName + " is valid, with pack format version " + packFormat);
                             isValid = true;
                         }
 
@@ -53,7 +54,7 @@ namespace MinecraftClient.Resource
 
         }
 
-        public void LoadResources(ResourcePackManager manager)
+        public IEnumerator LoadResources(ResourcePackManager manager, LoadStateInfo loadStateInfo)
         {
             if (isValid)
             {
@@ -64,6 +65,8 @@ namespace MinecraftClient.Resource
                     // Load textures and models
                     foreach (var nameSpaceDir in assetsDir.GetDirectories())
                     {
+                        int count = 0;
+
                         string nameSpace = nameSpaceDir.Name;
 
                         // Load and store all texture files...
@@ -81,6 +84,12 @@ namespace MinecraftClient.Resource
                                 // This texture is not provided by previous resource packs, so add it here...
                                 manager.textureTable.Add(identifier, texFile.FullName.Replace('\\', '/'));
                             }
+                            count++;
+                            if (count % 100 == 0)
+                            {
+                                loadStateInfo.infoText = $"Loading texture {identifier}";
+                                yield return null;
+                            }
                         }
 
                         // Load and store all model files...
@@ -97,7 +106,12 @@ namespace MinecraftClient.Resource
                             // This model loader will load this model, its parent model(if not yet loaded),
                             // and then add them to the manager's model dictionary
                             manager.blockModelLoader.LoadBlockModel(identifier, assetsDir.FullName.Replace('\\', '/'));
-
+                            count++;
+                            if (count % 5 == 0)
+                            {
+                                loadStateInfo.infoText =  $"Loading block model {identifier}";
+                                yield return null;
+                            }
                         }
 
                     }
@@ -115,15 +129,16 @@ namespace MinecraftClient.Resource
             }
         }
 
-        public void BuildStateGeometries(ResourcePackManager manager)
+        public IEnumerator BuildStateGeometries(ResourcePackManager manager, LoadStateInfo loadStateInfo)
         {
             // Load all blockstate files, make and assign their block meshes...
-            if (Block.Palette.BlockStatesReady && isValid)
+            if (Block.Palette is not null && isValid)
             {
                 // Assets folder...
                 DirectoryInfo assetsDir = new DirectoryInfo(PathHelper.GetPackDirectoryNamed(packName) + "/assets");
                 if (assetsDir.Exists)
                 {
+                    int count = 0;
                     foreach (var blockPair in Block.Palette.StateListTable)
                     {
                         var blockId = blockPair.Key;
@@ -140,7 +155,12 @@ namespace MinecraftClient.Resource
                         // Load the state model definition of this block
                         string statePath = assetsDir.FullName + '/' + blockId.nameSpace + "/blockstates/" + blockId.path + ".json";
                         manager.stateModelLoader.LoadBlockStateModel(manager, blockId, statePath);
-
+                        count++;
+                        if (count % 10 == 0)
+                        {
+                            loadStateInfo.infoText = $"Building model for block {blockId}";
+                            yield return null;
+                        }
                     }
 
                 }

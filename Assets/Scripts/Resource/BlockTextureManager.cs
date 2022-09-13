@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -7,13 +8,13 @@ using MinecraftClient.Rendering;
 
 namespace MinecraftClient.Resource
 {
-    public class BlockTextureManager
+    public static class BlockTextureManager
     {
         private static Dictionary<ResourceLocation, int> blockAtlasTable = new Dictionary<ResourceLocation, int>();
         private static Dictionary<RenderType, int> plcboAtlasTable       = new Dictionary<RenderType, int>();
         private static bool initialized = false;
 
-        public static float2[] GetUVs(ResourceLocation identifier, float4 part, int areaRot)
+        public static float2[] GetUVs(ResourceLocation identifier, Vector4 part, int areaRot)
         {
             return GetUVsAtOffset(GetAtlasOffset(identifier), part, areaRot);
         }
@@ -21,7 +22,7 @@ namespace MinecraftClient.Resource
         private const int TexturesInALine = 32;
         private const float One = 1.0F / TexturesInALine; // Size of a single block texture
 
-        private static float2[] GetUVsAtOffset(int offset, float4 part, int areaRot)
+        private static float2[] GetUVsAtOffset(int offset, Vector4 part, int areaRot)
         {
             // vect: x,  y,  z,  w
             // vect: x1, y1, x2, y2
@@ -70,9 +71,9 @@ namespace MinecraftClient.Resource
             new Texture2D(2, 2),
             new Texture2D(2, 2)
         };
+
         public static Texture2D GetAtlasTexture(RenderType type)
         {
-            EnsureInitialized();
             return type switch
             {
                 RenderType.CUTOUT        => atlasTexture[0],
@@ -91,38 +92,10 @@ namespace MinecraftClient.Resource
 
         private static void Initialze()
         {
-            Debug.Log("Read and initialize Block Atlas table...");
-            string atlasFilePath = PathHelper.GetPacksDirectory() + "/block_atlas.png";
-            string atlasJsonPath = PathHelper.GetPacksDirectory() + "/block_atlas_dict.json";
-
             string plcboFilePath = PathHelper.GetPacksDirectory() + "/block_atlas_placebo.png";
 
-            if (File.Exists(atlasJsonPath) && File.Exists(atlasFilePath) && File.Exists(plcboFilePath))
+            if (File.Exists(plcboFilePath))
             {
-                // Set up atlas textures...
-                for (int i = 0;i < atlasTexture.Length;i++)
-                {
-                    atlasTexture[i].LoadImage(File.ReadAllBytes(atlasFilePath));
-                    atlasTexture[i].filterMode = FilterMode.Point;
-                }
-                
-                atlasTexture[1].mipMapBias = -1F;
-
-                string jsonText = File.ReadAllText(atlasJsonPath);
-                Json.JSONData atlasJson = Json.ParseJson(jsonText);
-
-                foreach (KeyValuePair<string, Json.JSONData> item in atlasJson.Properties)
-                {
-                    if (blockAtlasTable.ContainsKey(ResourceLocation.fromString(item.Key)))
-                    {
-                        throw new InvalidDataException("Duplicate block atlas with one name " + item.Key + "!?");
-                    }
-                    else
-                    {
-                        blockAtlasTable[ResourceLocation.fromString(item.Key)] = int.Parse(item.Value.StringValue);
-                    }
-                }
-
                 plcboTexture.LoadImage(File.ReadAllBytes(plcboFilePath));
                 plcboTexture.filterMode = FilterMode.Point;
 
@@ -134,10 +107,56 @@ namespace MinecraftClient.Resource
             }
             else
             {
-                Debug.LogWarning("Texture files not all available!");
+                Debug.LogWarning("Placebo texture file not available!");
             }
 
             initialized = true;
+
+        }
+
+        public static IEnumerator Load(string version, CoroutineFlag loadFlag, LoadStateInfo loadStateInfo)
+        {
+            blockAtlasTable.Clear(); // Clear previously loaded table...
+
+            string atlasFilePath = PathHelper.GetPacksDirectory() + "/block_atlas_" + version + ".png";
+            string atlasJsonPath = PathHelper.GetPacksDirectory() + "/block_atlas_" + version + "_dict.json";
+
+            if (File.Exists(atlasJsonPath) && File.Exists(atlasFilePath))
+            {   // Set up atlas textures...
+                for (int i = 0;i < atlasTexture.Length;i++)
+                {
+                    atlasTexture[i].LoadImage(File.ReadAllBytes(atlasFilePath));
+                    atlasTexture[i].filterMode = FilterMode.Point;
+                }
+                
+                atlasTexture[1].mipMapBias = -1F;
+
+                string jsonText = File.ReadAllText(atlasJsonPath);
+                Json.JSONData atlasJson = Json.ParseJson(jsonText);
+                int count = 0;
+                foreach (KeyValuePair<string, Json.JSONData> item in atlasJson.Properties)
+                {
+                    if (blockAtlasTable.ContainsKey(ResourceLocation.fromString(item.Key)))
+                    {
+                        loadFlag.done = true;
+                        throw new InvalidDataException("Duplicate block atlas with one name " + item.Key + "!?");
+                    }
+                    else
+                    {
+                        blockAtlasTable[ResourceLocation.fromString(item.Key)] = int.Parse(item.Value.StringValue);
+                        count++;
+                        if (count % 20 == 0)
+                        {
+                            loadStateInfo.infoText = $"Loading pre-generated atlas {item.Key}";
+                            yield return null;
+                        }
+                    }
+                }
+            }
+            else
+                Debug.LogWarning("Texture files not all available!");
+
+            loadFlag.done = true;
 
         }
         

@@ -1,8 +1,10 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Collections;
 using Unity.Mathematics;
 
+using MinecraftClient;
 using MinecraftClient.Rendering;
 using MinecraftClient.Resource;
 using MinecraftClient.Mapping;
@@ -12,10 +14,12 @@ public class Test : MonoBehaviour
 {
     private static readonly Color32 TINTCOLOR = new Color32(180, 255, 255, 255);
 
+    private readonly LoadStateInfo loadStateInfo = new();
+
     public void TestBuildState(string name, int stateId, BlockStateModel stateModel, int cullFlags, float3 pos)
     {
         int altitude = 0;
-        foreach (var geometry in stateModel.Geometries)
+        foreach (var model in stateModel.Geometries)
         {
             var modelObject = new GameObject(name);
             modelObject.transform.parent = transform;
@@ -25,10 +29,11 @@ public class Test : MonoBehaviour
             var render = modelObject.AddComponent<MeshRenderer>();
 
             // Make and set mesh...
-            var geoData = geometry.GetData(cullFlags);
+            var visualBuffer = new VertexBuffer();
+            model.Build(ref visualBuffer, float3.zero, cullFlags);
 
-            int vertCount = geoData.Item1.Length;
-            int triIndexCount = geoData.Item4.Length;
+            int vertexCount = visualBuffer.vert.Length;
+            int triIdxCount = (vertexCount / 2) * 3;
 
             var meshDataArr = Mesh.AllocateWritableMeshData(1);
             var meshData = meshDataArr[0];
@@ -38,30 +43,39 @@ public class Test : MonoBehaviour
             vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 2, stream: 1);
 
             // Set mesh params
-            meshData.SetVertexBufferParams(vertCount, vertAttrs);
+            meshData.SetVertexBufferParams(vertexCount, vertAttrs);
             vertAttrs.Dispose();
 
-            meshData.SetIndexBufferParams(triIndexCount, IndexFormat.UInt32);
+            meshData.SetIndexBufferParams(triIdxCount, IndexFormat.UInt32);
 
             // Set vertex data
             // Positions
             var positions = meshData.GetVertexData<float3>(0);
-            positions.CopyFrom(geoData.Item1);
+            positions.CopyFrom(visualBuffer.vert);
             // Tex Coordinates
             var texCoords = meshData.GetVertexData<float2>(1);
-            texCoords.CopyFrom(geoData.Item2);
+            texCoords.CopyFrom(visualBuffer.txuv);
 
             // Set face data
             var triIndices = meshData.GetIndexData<uint>();
-            triIndices.CopyFrom(geoData.Item4);
+            uint vi = 0; int ti = 0;
+            for (;vi < vertexCount;vi += 4U, ti += 6)
+            {
+                triIndices[ti]     = vi;
+                triIndices[ti + 1] = vi + 3U;
+                triIndices[ti + 2] = vi + 2U;
+                triIndices[ti + 3] = vi;
+                triIndices[ti + 4] = vi + 1U;
+                triIndices[ti + 5] = vi + 3U;
+            }
 
             var bounds = new Bounds(new Vector3(0.5F, 0.5F, 0.5F), new Vector3(1F, 1F, 1F));
 
             meshData.subMeshCount = 1;
-            meshData.SetSubMesh(0, new SubMeshDescriptor(0, triIndexCount)
+            meshData.SetSubMesh(0, new SubMeshDescriptor(0, triIdxCount)
             {
                 bounds = bounds,
-                vertexCount = vertCount
+                vertexCount = vertexCount
             }, MeshUpdateFlags.DontRecalculateBounds);
 
             var mesh = new Mesh
@@ -81,32 +95,55 @@ public class Test : MonoBehaviour
 
     }
 
-    void Start()
+    private IEnumerator DoBuild(string dataVersion, string resourceVersion)
     {
+        var wait = new WaitForSecondsRealtime(0.1F);
+
         // First load all possible Block States...
-        Block.Palette = new Palette116();
+        var blockLoadFlag = new CoroutineFlag();
 
-        // Create a new resource pack...
-        ResourcePackManager manager = new ResourcePackManager();
+        Block.Palette = new BlockStatePalette();
+        StartCoroutine(Block.Palette.PrepareData(dataVersion, blockLoadFlag, loadStateInfo));
 
-        ResourcePack pack = new ResourcePack("vanilla-1.16.5");
-        manager.AddPack(pack);
+        while (!blockLoadFlag.done)
+            yield return wait;
+
+        // Load texture atlas... TODO (Will be decently implemented in future)
+        BlockTextureManager.EnsureInitialized();
+        var atlasLoadFlag = new CoroutineFlag();
+        StartCoroutine(BlockTextureManager.Load(resourceVersion, atlasLoadFlag, loadStateInfo));
+
+        while (!atlasLoadFlag.done)
+            yield return wait;
+
+        // Create a new resource pack manager...
+        var packManager = new ResourcePackManager();
+
+        // Load resources...
+        packManager.ClearPacks();
+
+        ResourcePack pack = new ResourcePack($"vanilla-{resourceVersion}");
+        packManager.AddPack(pack);
 
         // Load valid packs...
-        manager.LoadPacks();
+        var resLoadFlag = new CoroutineFlag();
+        StartCoroutine(packManager.LoadPacks(resLoadFlag, loadStateInfo));
+
+        while (!resLoadFlag.done)
+            yield return wait;
 
         float startTime = Time.realtimeSinceStartup;
 
         int start = 0, limit = 4096;
         int count = 0, width = 64;
-        foreach (var item in manager.finalTable)
+        foreach (var item in packManager.finalTable)
         {
             int index = count - start;
             if (index >= 0)
             {
                 string stateName = Block.Palette.StatesTable[item.Key].ToString();
 
-                TestBuildState(item.Key.ToString() + " " + stateName, item.Key, item.Value, 0b111111, new float3((index % width) * 2, 0, (index / width) * 2));
+                TestBuildState($"{item.Key} {stateName}", item.Key, item.Value, 0b111111, new float3((index % width) * 2, 0, (index / width) * 2));
             }
 
             count++;
@@ -116,7 +153,13 @@ public class Test : MonoBehaviour
 
         }
 
-        Debug.Log("Unity meshes built in " + (Time.realtimeSinceStartup - startTime) + " seconds.");
+        Debug.Log($"Minecraft block meshes built in {Time.realtimeSinceStartup - startTime} seconds.");
+    }
+
+    void Start()
+    {
+        StartCoroutine(DoBuild("1.16", "1.16.5"));
 
     }
+
 }

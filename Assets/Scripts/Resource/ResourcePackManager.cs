@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -35,9 +36,12 @@ namespace MinecraftClient.Resource
         public void ClearPacks()
         {
             packs.Clear();
+            textureTable.Clear();
+            modelsTable.Clear();
+            finalTable.Clear();
         }
 
-        public void LoadPacks()
+        public IEnumerator LoadPacks(CoroutineFlag flag, LoadStateInfo loadStateInfo)
         {
             float startTime = Time.realtimeSinceStartup;
 
@@ -45,7 +49,7 @@ namespace MinecraftClient.Resource
             {
                 if (pack.IsValid)
                 {
-                    pack.LoadResources(this);
+                    yield return pack.LoadResources(this, loadStateInfo);
                 }
                 
             }
@@ -54,7 +58,7 @@ namespace MinecraftClient.Resource
             {
                 if (pack.IsValid)
                 {
-                    pack.BuildStateGeometries(this);
+                    yield return pack.BuildStateGeometries(this, loadStateInfo);
                 }
                 
             }
@@ -70,8 +74,12 @@ namespace MinecraftClient.Resource
                 }
             }
 
+            loadStateInfo.infoText = string.Empty;
+
             Debug.Log("Resource packs loaded in " + (Time.realtimeSinceStartup - startTime) + " seconds.");
             Debug.Log("Built " + finalTable.Count + " block state geometry lists.");
+
+            flag.done = true;
 
         }
 

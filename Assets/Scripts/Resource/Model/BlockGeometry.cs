@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using UnityEngine;
 using Unity.Mathematics;
@@ -13,12 +14,10 @@ namespace MinecraftClient.Resource
         public const float MC_VERT_SCALE = 16F;
         public const float MC_UV_SCALE = 16F;
 
-        public readonly Dictionary<CullDir, List<float3>> verticies   = new();
-        public readonly Dictionary<CullDir, List<uint>> triangles     = new();
-        public readonly Dictionary<CullDir, List<float2>> uvs         = new();
-        public readonly Dictionary<CullDir, List<int>> tintIndices    = new();
-
-        public readonly Dictionary<CullDir, uint> vertIndexOffset     = new();
+        public readonly Dictionary<CullDir, List<float3>> verticies = new();
+        public readonly Dictionary<CullDir, List<float2>> uvs       = new();
+        public readonly Dictionary<CullDir, List<int>> tintIndices  = new();
+        public readonly Dictionary<CullDir, uint> vertIndexOffset   = new();
 
         public BlockGeometry()
         {
@@ -28,7 +27,6 @@ namespace MinecraftClient.Resource
                 verticies.Add(dir, new List<float3>());
                 uvs.Add(dir, new List<float2>());
                 tintIndices.Add(dir, new List<int>());
-                triangles.Add(dir, new List<uint>());
                 vertIndexOffset.Add(dir, 0);
             }
         }
@@ -46,20 +44,17 @@ namespace MinecraftClient.Resource
             {
                 AppendElement(wrapper.model, elem, wrapper.zyRot, wrapper.uvlock);
             }
-
         }
 
-        private Dictionary<CullDir, float3[]> vertexArrs   = new();
-        private Dictionary<CullDir, uint[]>   triangleArrs = new();
-        private Dictionary<CullDir, float2[]> txuvArrs     = new();
-        private Dictionary<CullDir, int[]>    tintArrs     = new();
+        private readonly Dictionary<CullDir, float3[]> vertexArrs = new();
+        private readonly Dictionary<CullDir, float2[]> txuvArrs = new();
+        private readonly Dictionary<CullDir, int[]>    tintArrs = new();
 
         public BlockGeometry Finalize()
         {
             foreach (CullDir dir in Enum.GetValues(typeof (CullDir)))
             {
                 vertexArrs.Add(dir, verticies[dir].ToArray());
-                triangleArrs.Add(dir, triangles[dir].ToArray());
                 txuvArrs.Add(dir, uvs[dir].ToArray());
                 tintArrs.Add(dir, tintIndices[dir].ToArray());
             }
@@ -67,85 +62,210 @@ namespace MinecraftClient.Resource
             return this;
         }
 
-        public Tuple<float3[], float2[], int[], uint[]> GetData(int cullFlags)
+        // Cache for array sizes, mapping cull flags
+        // to corresponding vertex array sizes
+        private readonly ConcurrentDictionary<int, int> sizeCache = new();
+
+        private int CalculateArraySize(int cullFlags)
         {
-            return GetDataForChunk(0U, float3.zero, cullFlags);
+            int vertexCount = vertexArrs[CullDir.NONE].Length;
+
+            if ((cullFlags & (1 << 0)) != 0)
+                vertexCount += vertexArrs[CullDir.UP].Length;
+
+            if ((cullFlags & (1 << 1)) != 0)
+                vertexCount += vertexArrs[CullDir.DOWN].Length;
+
+            if ((cullFlags & (1 << 2)) != 0)
+                vertexCount += vertexArrs[CullDir.SOUTH].Length;
+
+            if ((cullFlags & (1 << 3)) != 0)
+                vertexCount += vertexArrs[CullDir.NORTH].Length;
+
+            if ((cullFlags & (1 << 4)) != 0)
+                vertexCount += vertexArrs[CullDir.EAST].Length;
+
+            if ((cullFlags & (1 << 5)) != 0)
+                vertexCount += vertexArrs[CullDir.WEST].Length;
+
+            return vertexCount;
         }
 
-        // A '1' bit in cullFlags means shown, while a '0' indicates culled...
-        public Tuple<float3[], float2[], int[], uint[]> GetDataForChunk(uint startVertOffset, float3 posOffset, int cullFlags)
+        public void Build(ref VertexBuffer buffer, float3 posOffset, int cullFlags)
         {
-            uint bulkVertIndexOffset = startVertOffset;
+            // Compute value if absent
+            int vertexCount = buffer.vert.Length + ((sizeCache.ContainsKey(cullFlags)) ? sizeCache[cullFlags] : (sizeCache[cullFlags] = CalculateArraySize(cullFlags)));
 
-            // These things with 'none' cull direction are never culled, so append them first:
-            var txuvs = txuvArrs[CullDir.NONE];
-            var tintIndcs = tintArrs[CullDir.NONE];
-            var verts = ArrayUtil.GetWithOffset(vertexArrs[CullDir.NONE], posOffset);
-            var tris  = ArrayUtil.GetWithOffset(triangleArrs[CullDir.NONE], bulkVertIndexOffset);
+            var verts = new float3[vertexCount];
+            var txuvs = new float2[vertexCount];
+            var tints = new    int[vertexCount];
+
+            buffer.vert.CopyTo(verts, 0);
+            buffer.txuv.CopyTo(txuvs, 0);
+            buffer.tint.CopyTo(tints, 0);
+
+            uint i, vertOffset = (uint)buffer.vert.Length;
+
+            if (vertexArrs[CullDir.NONE].Length > 0)
+            {
+                for (i = 0U;i < vertexArrs[CullDir.NONE].Length;i++)
+                    verts[i + vertOffset] = vertexArrs[CullDir.NONE][i] + posOffset;
+                txuvArrs[CullDir.NONE].CopyTo(txuvs, vertOffset);
+                tintArrs[CullDir.NONE].CopyTo(tints, vertOffset);
+                vertOffset += (uint)vertexArrs[CullDir.NONE].Length;
+            }
+
+            if ((cullFlags & (1 << 0)) != 0 && vertexArrs[CullDir.UP].Length > 0)
+            {
+                for (i = 0U;i < vertexArrs[CullDir.UP].Length;i++)
+                    verts[i + vertOffset] = vertexArrs[CullDir.UP][i] + posOffset;
+                txuvArrs[CullDir.UP].CopyTo(txuvs, vertOffset);
+                tintArrs[CullDir.UP].CopyTo(tints, vertOffset);
+                vertOffset += (uint)vertexArrs[CullDir.UP].Length;
+            }
+
+            if ((cullFlags & (1 << 1)) != 0 && vertexArrs[CullDir.DOWN].Length > 0)
+            {
+                for (i = 0U;i < vertexArrs[CullDir.DOWN].Length;i++)
+                    verts[i + vertOffset] = vertexArrs[CullDir.DOWN][i] + posOffset;
+                txuvArrs[CullDir.DOWN].CopyTo(txuvs, vertOffset);
+                tintArrs[CullDir.DOWN].CopyTo(tints, vertOffset);
+                vertOffset += (uint)vertexArrs[CullDir.DOWN].Length;
+            }
+
+            if ((cullFlags & (1 << 2)) != 0 && vertexArrs[CullDir.SOUTH].Length > 0)
+            {
+                for (i = 0U;i < vertexArrs[CullDir.SOUTH].Length;i++)
+                    verts[i + vertOffset] = vertexArrs[CullDir.SOUTH][i] + posOffset;
+                txuvArrs[CullDir.SOUTH].CopyTo(txuvs, vertOffset);
+                tintArrs[CullDir.SOUTH].CopyTo(tints, vertOffset);
+                vertOffset += (uint)vertexArrs[CullDir.SOUTH].Length;
+            }
+
+            if ((cullFlags & (1 << 3)) != 0 && vertexArrs[CullDir.NORTH].Length > 0)
+            {
+                for (i = 0U;i < vertexArrs[CullDir.NORTH].Length;i++)
+                    verts[i + vertOffset] = vertexArrs[CullDir.NORTH][i] + posOffset;
+                txuvArrs[CullDir.NORTH].CopyTo(txuvs, vertOffset);
+                tintArrs[CullDir.NORTH].CopyTo(tints, vertOffset);
+                vertOffset += (uint)vertexArrs[CullDir.NORTH].Length;
+            }
+
+            if ((cullFlags & (1 << 4)) != 0 && vertexArrs[CullDir.EAST].Length > 0)
+            {
+                for (i = 0U;i < vertexArrs[CullDir.EAST].Length;i++)
+                    verts[i + vertOffset] = vertexArrs[CullDir.EAST][i] + posOffset;
+                txuvArrs[CullDir.EAST].CopyTo(txuvs, vertOffset);
+                tintArrs[CullDir.EAST].CopyTo(tints, vertOffset);
+                vertOffset += (uint)vertexArrs[CullDir.EAST].Length;
+            }
+
+            if ((cullFlags & (1 << 5)) != 0 && vertexArrs[CullDir.WEST].Length > 0)
+            {
+                for (i = 0U;i < vertexArrs[CullDir.WEST].Length;i++)
+                    verts[i + vertOffset] = vertexArrs[CullDir.WEST][i] + posOffset;
+                txuvArrs[CullDir.WEST].CopyTo(txuvs, vertOffset);
+                tintArrs[CullDir.WEST].CopyTo(tints, vertOffset);
+                vertOffset += (uint)vertexArrs[CullDir.WEST].Length;
+            }
+
+            buffer.vert = verts;
+            buffer.txuv = txuvs;
+            buffer.tint = tints;
+
+        }
+
+        public void BuildWithCollider(ref VertexBuffer visualBuffer, ref float3[] colliderVerts, float3 posOffset, int cullFlags)
+        {
+            // Compute value if absent
+            int extraVertCount  = sizeCache.ContainsKey(cullFlags) ? sizeCache[cullFlags] : (sizeCache[cullFlags] = CalculateArraySize(cullFlags));
+            int vVertexCount = visualBuffer.vert.Length + extraVertCount;
+
+            var verts = new float3[vVertexCount];
+            var txuvs = new float2[vVertexCount];
+            var tints = new    int[vVertexCount];
+
+            visualBuffer.vert.CopyTo(verts, 0);
+            visualBuffer.txuv.CopyTo(txuvs, 0);
+            visualBuffer.tint.CopyTo(tints, 0);
+
+            var cVerts = new float3[colliderVerts.Length + extraVertCount];
+            colliderVerts.CopyTo(cVerts, 0);
+
+            uint i, vertOffset = (uint)visualBuffer.vert.Length;
+            uint offsetAtStart = vertOffset;
+
+            if (vertexArrs[CullDir.NONE].Length > 0)
+            {
+                for (i = 0U;i < vertexArrs[CullDir.NONE].Length;i++)
+                    verts[i + vertOffset] = vertexArrs[CullDir.NONE][i] + posOffset;
+                txuvArrs[CullDir.NONE].CopyTo(txuvs, vertOffset);
+                tintArrs[CullDir.NONE].CopyTo(tints, vertOffset);
+                vertOffset += (uint)vertexArrs[CullDir.NONE].Length;
+            }
+
+            if ((cullFlags & (1 << 0)) != 0 && vertexArrs[CullDir.UP].Length > 0)
+            {
+                for (i = 0U;i < vertexArrs[CullDir.UP].Length;i++)
+                    verts[i + vertOffset] = vertexArrs[CullDir.UP][i] + posOffset;
+                txuvArrs[CullDir.UP].CopyTo(txuvs, vertOffset);
+                tintArrs[CullDir.UP].CopyTo(tints, vertOffset);
+                vertOffset += (uint)vertexArrs[CullDir.UP].Length;
+            }
+
+            if ((cullFlags & (1 << 1)) != 0 && vertexArrs[CullDir.DOWN].Length > 0)
+            {
+                for (i = 0U;i < vertexArrs[CullDir.DOWN].Length;i++)
+                    verts[i + vertOffset] = vertexArrs[CullDir.DOWN][i] + posOffset;
+                txuvArrs[CullDir.DOWN].CopyTo(txuvs, vertOffset);
+                tintArrs[CullDir.DOWN].CopyTo(tints, vertOffset);
+                vertOffset += (uint)vertexArrs[CullDir.DOWN].Length;
+            }
+
+            if ((cullFlags & (1 << 2)) != 0 && vertexArrs[CullDir.SOUTH].Length > 0)
+            {
+                for (i = 0U;i < vertexArrs[CullDir.SOUTH].Length;i++)
+                    verts[i + vertOffset] = vertexArrs[CullDir.SOUTH][i] + posOffset;
+                txuvArrs[CullDir.SOUTH].CopyTo(txuvs, vertOffset);
+                tintArrs[CullDir.SOUTH].CopyTo(tints, vertOffset);
+                vertOffset += (uint)vertexArrs[CullDir.SOUTH].Length;
+            }
+
+            if ((cullFlags & (1 << 3)) != 0 && vertexArrs[CullDir.NORTH].Length > 0)
+            {
+                for (i = 0U;i < vertexArrs[CullDir.NORTH].Length;i++)
+                    verts[i + vertOffset] = vertexArrs[CullDir.NORTH][i] + posOffset;
+                txuvArrs[CullDir.NORTH].CopyTo(txuvs, vertOffset);
+                tintArrs[CullDir.NORTH].CopyTo(tints, vertOffset);
+                vertOffset += (uint)vertexArrs[CullDir.NORTH].Length;
+            }
+
+            if ((cullFlags & (1 << 4)) != 0 && vertexArrs[CullDir.EAST].Length > 0)
+            {
+                for (i = 0U;i < vertexArrs[CullDir.EAST].Length;i++)
+                    verts[i + vertOffset] = vertexArrs[CullDir.EAST][i] + posOffset;
+                txuvArrs[CullDir.EAST].CopyTo(txuvs, vertOffset);
+                tintArrs[CullDir.EAST].CopyTo(tints, vertOffset);
+                vertOffset += (uint)vertexArrs[CullDir.EAST].Length;
+            }
+
+            if ((cullFlags & (1 << 5)) != 0 && vertexArrs[CullDir.WEST].Length > 0)
+            {
+                for (i = 0U;i < vertexArrs[CullDir.WEST].Length;i++)
+                    verts[i + vertOffset] = vertexArrs[CullDir.WEST][i] + posOffset;
+                txuvArrs[CullDir.WEST].CopyTo(txuvs, vertOffset);
+                tintArrs[CullDir.WEST].CopyTo(tints, vertOffset);
+                vertOffset += (uint)vertexArrs[CullDir.WEST].Length;
+            }
+
+            // Copy from visual buffer to collider
+            Array.Copy(verts, offsetAtStart, cVerts, colliderVerts.Length, extraVertCount);
             
-            bulkVertIndexOffset = startVertOffset + (uint)verts.Length;
+            visualBuffer.vert = verts;
+            visualBuffer.txuv = txuvs;
+            visualBuffer.tint = tints;
 
-            if ((cullFlags & (1 << 0)) != 0) // 1st bit on, Unity +Y Shown (Up)
-            {
-                verts     = ArrayUtil.GetConcatedWithOffset(verts, vertexArrs[CullDir.UP], posOffset);
-                tris      = ArrayUtil.GetConcatedWithOffset(tris, triangleArrs[CullDir.UP], bulkVertIndexOffset);
-                txuvs     = ArrayUtil.GetConcated(txuvs,     txuvArrs[CullDir.UP]);
-                tintIndcs = ArrayUtil.GetConcated(tintIndcs, tintArrs[CullDir.UP]);
-
-                bulkVertIndexOffset = startVertOffset + (uint)verts.Length;
-            }
-
-            if ((cullFlags & (1 << 1)) != 0) // 2nd bit on, Unity -Y Shown (Down)
-            {
-                verts     = ArrayUtil.GetConcatedWithOffset(verts, vertexArrs[CullDir.DOWN], posOffset);
-                tris      = ArrayUtil.GetConcatedWithOffset(tris, triangleArrs[CullDir.DOWN], bulkVertIndexOffset);
-                txuvs     = ArrayUtil.GetConcated(txuvs,     txuvArrs[CullDir.DOWN]);
-                tintIndcs = ArrayUtil.GetConcated(tintIndcs, tintArrs[CullDir.DOWN]);
-                
-                bulkVertIndexOffset = startVertOffset + (uint)verts.Length;
-            }
-
-            if ((cullFlags & (1 << 2)) != 0) // 3rd bit on, Unity +X Shown (South)
-            {
-                verts     = ArrayUtil.GetConcatedWithOffset(verts, vertexArrs[CullDir.SOUTH], posOffset);
-                tris      = ArrayUtil.GetConcatedWithOffset(tris, triangleArrs[CullDir.SOUTH], bulkVertIndexOffset);
-                txuvs     = ArrayUtil.GetConcated(txuvs,     txuvArrs[CullDir.SOUTH]);
-                tintIndcs = ArrayUtil.GetConcated(tintIndcs, tintArrs[CullDir.SOUTH]);
-
-                bulkVertIndexOffset = startVertOffset + (uint)verts.Length;
-            }
-
-            if ((cullFlags & (1 << 3)) != 0) // 4th bit on, Unity -X Shown (North)
-            {
-                verts     = ArrayUtil.GetConcatedWithOffset(verts, vertexArrs[CullDir.NORTH], posOffset);
-                tris      = ArrayUtil.GetConcatedWithOffset(tris, triangleArrs[CullDir.NORTH], bulkVertIndexOffset);
-                txuvs     = ArrayUtil.GetConcated(txuvs,     txuvArrs[CullDir.NORTH]);
-                tintIndcs = ArrayUtil.GetConcated(tintIndcs, tintArrs[CullDir.NORTH]);
-                
-                bulkVertIndexOffset = startVertOffset + (uint)verts.Length;
-            }
-
-            if ((cullFlags & (1 << 4)) != 0) // 5th bit on, Unity +Z Shown (East)
-            {
-                verts     = ArrayUtil.GetConcatedWithOffset(verts, vertexArrs[CullDir.EAST], posOffset);
-                tris      = ArrayUtil.GetConcatedWithOffset(tris, triangleArrs[CullDir.EAST], bulkVertIndexOffset);
-                txuvs     = ArrayUtil.GetConcated(txuvs,     txuvArrs[CullDir.EAST]);
-                tintIndcs = ArrayUtil.GetConcated(tintIndcs, tintArrs[CullDir.EAST]);
-
-                bulkVertIndexOffset = startVertOffset + (uint)verts.Length;
-            }
-
-            if ((cullFlags & (1 << 5)) != 0) // 6th bit on, Unity -Z Shown (West)
-            {
-                verts     = ArrayUtil.GetConcatedWithOffset(verts, vertexArrs[CullDir.WEST], posOffset);
-                tris      = ArrayUtil.GetConcatedWithOffset(tris, triangleArrs[CullDir.WEST], bulkVertIndexOffset);
-                txuvs     = ArrayUtil.GetConcated(txuvs,     txuvArrs[CullDir.WEST]);
-                tintIndcs = ArrayUtil.GetConcated(tintIndcs, tintArrs[CullDir.WEST]);
-
-                bulkVertIndexOffset = startVertOffset + (uint)verts.Length;
-            }
-
-            return Tuple.Create(verts, txuvs, tintIndcs, tris);
+            colliderVerts = cVerts;
 
         }
 
@@ -265,10 +385,6 @@ namespace MinecraftClient.Resource
 
                 // Update vertex offset to current face's cull direction
                 uint offset = vertIndexOffset[cullDir];
-
-                triangles[cullDir] = triangles[cullDir].Concat(new List<uint>(){
-                    offset + 0U, offset + 1U, offset + 2U, offset + 2U, offset + 1U, offset + 3U
-                }).ToList();
 
                 // Increament vertex index offset of this cull direction
                 vertIndexOffset[cullDir] += 4; // Four vertices per quad
