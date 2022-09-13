@@ -89,6 +89,9 @@ public class Test : MonoBehaviour
 
             Mesh.ApplyAndDisposeWritableMeshData(meshDataArr, mesh);
 
+            // Recalculate mesh normals
+            mesh.RecalculateNormals();
+
             filter.sharedMesh = mesh;
             render.sharedMaterial = MaterialManager.GetBlockMaterial(Block.Palette.GetRenderType(stateId));
 
