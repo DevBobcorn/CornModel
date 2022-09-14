@@ -19,20 +19,28 @@ public class Test : MonoBehaviour
 
     public TMP_Text infoText;
 
-    public void TestBuildState(string name, int stateId, BlockStateModel stateModel, int cullFlags, float3 pos)
+    public void TestBuildState(string name, int stateId, BlockStateModel stateModel, int cullFlags, bool buildWater, float3 pos)
     {
         int altitude = 0;
         foreach (var model in stateModel.Geometries)
         {
+            var coord = pos + new int3(0, altitude, 0);
+
             var modelObject = new GameObject(name);
             modelObject.transform.parent = transform;
-            modelObject.transform.localPosition = pos + new int3(0, altitude, 0);
+            modelObject.transform.localPosition = coord;
 
             var filter = modelObject.AddComponent<MeshFilter>();
             var render = modelObject.AddComponent<MeshRenderer>();
 
             // Make and set mesh...
             var visualBuffer = new VertexBuffer();
+
+            if (buildWater)
+                FluidGeometry.Build(ref visualBuffer, 0, 0, 0, cullFlags);
+            int fluidVertexCount = visualBuffer.vert.Length;
+            int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
+            
             model.Build(ref visualBuffer, float3.zero, cullFlags);
 
             int vertexCount = visualBuffer.vert.Length;
@@ -74,12 +82,29 @@ public class Test : MonoBehaviour
 
             var bounds = new Bounds(new Vector3(0.5F, 0.5F, 0.5F), new Vector3(1F, 1F, 1F));
 
-            meshData.subMeshCount = 1;
-            meshData.SetSubMesh(0, new SubMeshDescriptor(0, triIdxCount)
+            if (buildWater)
             {
-                bounds = bounds,
-                vertexCount = vertexCount
-            }, MeshUpdateFlags.DontRecalculateBounds);
+                meshData.subMeshCount = 2;
+                meshData.SetSubMesh(0, new SubMeshDescriptor(0, fluidTriIdxCount)
+                {
+                    bounds = bounds,
+                    vertexCount = vertexCount
+                }, MeshUpdateFlags.DontRecalculateBounds);
+                meshData.SetSubMesh(1, new SubMeshDescriptor(fluidTriIdxCount, triIdxCount - fluidTriIdxCount)
+                {
+                    bounds = bounds,
+                    vertexCount = vertexCount
+                }, MeshUpdateFlags.DontRecalculateBounds);
+            }
+            else
+            {
+                meshData.subMeshCount = 1;
+                meshData.SetSubMesh(0, new SubMeshDescriptor(0, triIdxCount)
+                {
+                    bounds = bounds,
+                    vertexCount = vertexCount
+                }, MeshUpdateFlags.DontRecalculateBounds);
+            }
 
             var mesh = new Mesh
             {
@@ -93,7 +118,16 @@ public class Test : MonoBehaviour
             mesh.RecalculateNormals();
 
             filter.sharedMesh = mesh;
-            render.sharedMaterial = MaterialManager.GetBlockMaterial(Block.Palette.GetRenderType(stateId));
+            if (buildWater)
+            {
+                render.sharedMaterials =
+                    new []{
+                        MaterialManager.GetBlockMaterial(RenderType.TRANSLUCENT),
+                        MaterialManager.GetBlockMaterial(Block.Palette.GetRenderType(stateId))
+                    };
+            }
+            else
+                render.sharedMaterial = MaterialManager.GetBlockMaterial(Block.Palette.GetRenderType(stateId));
 
             altitude -= 2;
 
@@ -147,9 +181,9 @@ public class Test : MonoBehaviour
             int index = count - start;
             if (index >= 0)
             {
-                string stateName = Block.Palette.StatesTable[item.Key].ToString();
+                var state = Block.Palette.StatesTable[item.Key];
 
-                TestBuildState($"{item.Key} {stateName}", item.Key, item.Value, 0b111111, new float3((index % width) * 2, 0, (index / width) * 2));
+                TestBuildState($"{item.Key} {state}", item.Key, item.Value, 0b111111, state.InWater, new((index % width) * 2, 0, (index / width) * 2));
             }
 
             count++;
