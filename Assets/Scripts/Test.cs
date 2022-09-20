@@ -33,6 +33,8 @@ public class Test : MonoBehaviour
             var filter = modelObject.AddComponent<MeshFilter>();
             var render = modelObject.AddComponent<MeshRenderer>();
 
+            var collider = modelObject.AddComponent<MeshCollider>();
+
             // Make and set mesh...
             var visualBuffer = new VertexBuffer();
 
@@ -117,7 +119,9 @@ public class Test : MonoBehaviour
             // Recalculate mesh normals
             mesh.RecalculateNormals();
 
-            filter.sharedMesh = mesh;
+            filter.sharedMesh   = mesh;
+            collider.sharedMesh = mesh;
+
             if (buildWater)
             {
                 render.sharedMaterials =

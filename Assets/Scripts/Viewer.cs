@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 
 public class Viewer : MonoBehaviour
 {
@@ -6,6 +7,8 @@ public class Viewer : MonoBehaviour
     public float sensitivityY = 5F;
 
     public float moveSpeed = 5F;
+
+    public TMP_Text viewerText;
 
     void Start()
     {
@@ -58,6 +61,20 @@ public class Viewer : MonoBehaviour
         {
             moveGlobal = moveGlobal.normalized;
             transform.position += moveGlobal * moveSpeed * Time.deltaTime;
+        }
+
+        if (viewerText is not null)
+        {
+            var viewRay = Camera.main.ViewportPointToRay(new(0.5F, 0.5F, 0F));
+
+            RaycastHit viewHit;
+            string blockStateInfo;
+            if (Physics.Raycast(viewRay.origin, viewRay.direction, out viewHit, 10F))
+                blockStateInfo = viewHit.collider.gameObject.name;
+            else
+                blockStateInfo = string.Empty;
+
+            viewerText.text = $"FPS: {(int)(1 / Time.unscaledDeltaTime)}\n{blockStateInfo}";
         }
 
     }
