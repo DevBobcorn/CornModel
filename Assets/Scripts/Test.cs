@@ -149,9 +149,9 @@ public class Test : MonoBehaviour
             yield return wait;
 
         // Load texture atlas... TODO (Will be decently implemented in future)
-        BlockTextureManager.EnsureInitialized();
+        AtlasManager.EnsureInitialized();
         var atlasLoadFlag = new CoroutineFlag();
-        StartCoroutine(BlockTextureManager.Load(resourceVersion, atlasLoadFlag, loadStateInfo));
+        StartCoroutine(AtlasManager.Load(resourceVersion, atlasLoadFlag, loadStateInfo));
 
         while (!atlasLoadFlag.done)
             yield return wait;
