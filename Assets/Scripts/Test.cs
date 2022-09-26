@@ -13,13 +13,16 @@ using MinecraftClient.Mapping.BlockStatePalettes;
 
 public class Test : MonoBehaviour
 {
-    private static readonly Color32 TINTCOLOR = new Color32(180, 255, 255, 255);
+    private static readonly ResourceLocation WATER_STILL = new("block/water_still");
+    private static readonly ResourceLocation LAVA_STILL  = new("block/lava_still");
+    
+    private static readonly Color32 TINT_COLOR = new(255, 255, 255, 255);
 
     private readonly LoadStateInfo loadStateInfo = new();
 
     public TMP_Text infoText;
 
-    public void TestBuildState(string name, int stateId, BlockStateModel stateModel, int cullFlags, bool buildWater, float3 pos)
+    public void TestBuildState(string name, int stateId, BlockStateModel stateModel, int cullFlags, bool buildWater, bool buildLava, float3 pos)
     {
         int altitude = 0;
         foreach (var model in stateModel.Geometries)
@@ -39,7 +42,10 @@ public class Test : MonoBehaviour
             var visualBuffer = new VertexBuffer();
 
             if (buildWater)
-                FluidGeometry.Build(ref visualBuffer, 0, 0, 0, cullFlags);
+                FluidGeometry.Build(ref visualBuffer, WATER_STILL, 0, 0, 0, cullFlags);
+            else if (buildLava)
+                FluidGeometry.Build(ref visualBuffer, LAVA_STILL,  0, 0, 0, cullFlags);
+
             int fluidVertexCount = visualBuffer.vert.Length;
             int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
             
@@ -84,7 +90,7 @@ public class Test : MonoBehaviour
 
             var bounds = new Bounds(new Vector3(0.5F, 0.5F, 0.5F), new Vector3(1F, 1F, 1F));
 
-            if (buildWater)
+            if (buildWater || buildLava)
             {
                 meshData.subMeshCount = 2;
                 meshData.SetSubMesh(0, new SubMeshDescriptor(0, fluidTriIdxCount)
@@ -186,7 +192,7 @@ public class Test : MonoBehaviour
             {
                 var state = Block.Palette.StatesTable[item.Key];
 
-                TestBuildState($"{item.Key} {state}", item.Key, item.Value, 0b111111, state.InWater, new((index % width) * 2, 0, (index / width) * 2));
+                TestBuildState($"{item.Key} {state}", item.Key, item.Value, 0b111111, state.InWater, state.InLava, new((index % width) * 2, 0, (index / width) * 2));
             }
 
             count++;
