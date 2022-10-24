@@ -14,7 +14,7 @@ namespace MinecraftClient.Resource
         private const float O = 0.001F;
         private const float I = 0.999F;
 
-        public static void Build(ref VertexBuffer buffer, ResourceLocation liquid, int x, int y, int z, int cullFlags)
+        public static void Build(ref VertexBuffer buffer, ResourceLocation liquid, int x, int y, int z, int cullFlags, float3 fluidColor)
         {
             float h = (cullFlags & (1 << 0)) != 0 ? 0.875F : I;
 
@@ -23,11 +23,14 @@ namespace MinecraftClient.Resource
 
             var verts = new float3[newLength];
             var txuvs = new float2[newLength];
-            var tints = new    int[newLength];
+            var tints = new float3[newLength];
 
             buffer.vert.CopyTo(verts, 0);
             buffer.txuv.CopyTo(txuvs, 0);
             buffer.tint.CopyTo(tints, 0);
+
+            for (int fti = vertOffset;fti < newLength;fti++)
+                tints[fti] = fluidColor;
 
             float2[] topUVs  = AtlasManager.GetUVs(liquid, FULL, 0);
             float2[] sideUVs = AtlasManager.GetUVs(liquid, new Vector4(0, 1 - h, 1, 1), 0);

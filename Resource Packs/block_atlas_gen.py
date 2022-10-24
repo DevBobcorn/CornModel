@@ -9,9 +9,9 @@ proc_types = [
 ]
 
 recolor_dict = {
-    'minecraft:block/water_flow': (63, 118, 228),
-    'minecraft:block/water_overlay': (63, 118, 228),
-    'minecraft:block/water_still': (63, 118, 228),
+#    'minecraft:block/water_flow': (63, 118, 228),
+#    'minecraft:block/water_overlay': (63, 118, 228),
+#    'minecraft:block/water_still': (63, 118, 228),
 }
 
 skip_list = []

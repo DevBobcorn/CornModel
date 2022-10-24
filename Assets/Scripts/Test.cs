@@ -9,7 +9,6 @@ using MinecraftClient;
 using MinecraftClient.Rendering;
 using MinecraftClient.Resource;
 using MinecraftClient.Mapping;
-using MinecraftClient.Mapping.BlockStatePalettes;
 
 public class Test : MonoBehaviour
 {
@@ -22,12 +21,13 @@ public class Test : MonoBehaviour
 
     public TMP_Text infoText;
 
-    public void TestBuildState(string name, int stateId, BlockStateModel stateModel, int cullFlags, bool buildWater, bool buildLava, float3 pos)
+    public void TestBuildState(string name, int stateId, BlockState state, BlockStateModel stateModel, int cullFlags, World world, float3 pos)
     {
         int altitude = 0;
         foreach (var model in stateModel.Geometries)
         {
             var coord = pos + new int3(0, altitude, 0);
+            var loc = new Location(coord.z, coord.y, coord.x);
 
             var modelObject = new GameObject(name);
             modelObject.transform.parent = transform;
@@ -41,15 +41,16 @@ public class Test : MonoBehaviour
             // Make and set mesh...
             var visualBuffer = new VertexBuffer();
 
-            if (buildWater)
-                FluidGeometry.Build(ref visualBuffer, WATER_STILL, 0, 0, 0, cullFlags);
-            else if (buildLava)
-                FluidGeometry.Build(ref visualBuffer, LAVA_STILL,  0, 0, 0, cullFlags);
+            if (state.InWater)
+                FluidGeometry.Build(ref visualBuffer, WATER_STILL, 0, 0, 0, cullFlags, world.GetWaterColor(loc));
+            else if (state.InLava)
+                FluidGeometry.Build(ref visualBuffer, LAVA_STILL,  0, 0, 0, cullFlags, BlockGeometry.DEFAULT_COLOR);
 
             int fluidVertexCount = visualBuffer.vert.Length;
             int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
-            
-            model.Build(ref visualBuffer, float3.zero, cullFlags);
+
+            var color = BlockStatePalette.INSTANCE.GetBlockColor(stateId, world, loc, state);
+            model.Build(ref visualBuffer, float3.zero, cullFlags, color);
 
             int vertexCount = visualBuffer.vert.Length;
             int triIdxCount = (vertexCount / 2) * 3;
@@ -57,9 +58,10 @@ public class Test : MonoBehaviour
             var meshDataArr = Mesh.AllocateWritableMeshData(1);
             var meshData = meshDataArr[0];
 
-            var vertAttrs = new NativeArray<VertexAttributeDescriptor>(2, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            var vertAttrs = new NativeArray<VertexAttributeDescriptor>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             vertAttrs[0] = new(VertexAttribute.Position,  dimension: 3, stream: 0);
             vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 2, stream: 1);
+            vertAttrs[2]  = new(VertexAttribute.Color,    dimension: 3, stream: 2);
 
             // Set mesh params
             meshData.SetVertexBufferParams(vertexCount, vertAttrs);
@@ -74,6 +76,9 @@ public class Test : MonoBehaviour
             // Tex Coordinates
             var texCoords = meshData.GetVertexData<float2>(1);
             texCoords.CopyFrom(visualBuffer.txuv);
+            // Vertex colors
+            var vertColors = meshData.GetVertexData<float3>(2);
+            vertColors.CopyFrom(visualBuffer.tint);
 
             // Set face data
             var triIndices = meshData.GetIndexData<uint>();
@@ -90,7 +95,7 @@ public class Test : MonoBehaviour
 
             var bounds = new Bounds(new Vector3(0.5F, 0.5F, 0.5F), new Vector3(1F, 1F, 1F));
 
-            if (buildWater || buildLava)
+            if (state.InWater || state.InLava)
             {
                 meshData.subMeshCount = 2;
                 meshData.SetSubMesh(0, new SubMeshDescriptor(0, fluidTriIdxCount)
@@ -128,16 +133,16 @@ public class Test : MonoBehaviour
             filter.sharedMesh   = mesh;
             collider.sharedMesh = mesh;
 
-            if (buildWater)
+            if (state.InWater)
             {
                 render.sharedMaterials =
                     new []{
                         MaterialManager.GetBlockMaterial(RenderType.TRANSLUCENT),
-                        MaterialManager.GetBlockMaterial(Block.Palette.GetRenderType(stateId))
+                        MaterialManager.GetBlockMaterial(BlockStatePalette.INSTANCE.GetRenderType(stateId))
                     };
             }
             else
-                render.sharedMaterial = MaterialManager.GetBlockMaterial(Block.Palette.GetRenderType(stateId));
+                render.sharedMaterial = MaterialManager.GetBlockMaterial(BlockStatePalette.INSTANCE.GetRenderType(stateId));
 
             altitude -= 2;
 
@@ -152,8 +157,7 @@ public class Test : MonoBehaviour
         // First load all possible Block States...
         var blockLoadFlag = new CoroutineFlag();
 
-        Block.Palette = new BlockStatePalette();
-        StartCoroutine(Block.Palette.PrepareData(dataVersion, blockLoadFlag, loadStateInfo));
+        StartCoroutine(BlockStatePalette.INSTANCE.PrepareData(dataVersion, blockLoadFlag, loadStateInfo));
 
         while (!blockLoadFlag.done)
             yield return wait;
@@ -183,16 +187,20 @@ public class Test : MonoBehaviour
 
         float startTime = Time.realtimeSinceStartup;
 
-        int start = 0, limit = 4096;
+        int start = 64, limit = 4096;
         int count = 0, width = 64;
+
+        // Create a placeholder world as provider of block colors
+        var world = new World();
+
         foreach (var item in packManager.finalTable)
         {
             int index = count - start;
             if (index >= 0)
             {
-                var state = Block.Palette.StatesTable[item.Key];
+                var state = BlockStatePalette.INSTANCE.StatesTable[item.Key];
 
-                TestBuildState($"{item.Key} {state}", item.Key, item.Value, 0b111111, state.InWater, state.InLava, new((index % width) * 2, 0, (index / width) * 2));
+                TestBuildState($"{item.Key} {state}", item.Key, state, item.Value, 0b111111, world, new((index % width) * 2, 0, (index / width) * 2));
             }
 
             count++;

@@ -28,4 +28,4 @@ Most code in this repository is open source under CDDL-1.0, and this license app
 The full CDDL-1.0 license can be reviewed [here](http://opensource.org/licenses/CDDL-1.0).
 
 ## > Screenshot
-![Screenshot 1](https://s2.loli.net/2022/09/22/8eNCv7UufGhIcgn.png)
+![Screenshot 1](https://s2.loli.net/2022/10/24/8vzrXcRkGHWNI2L.png)
