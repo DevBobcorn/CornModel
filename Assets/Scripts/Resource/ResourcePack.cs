@@ -141,6 +141,27 @@ namespace MinecraftClient.Resource
                             }
                         }
 
+                        if (new DirectoryInfo(nameSpaceDir + "/models/item").Exists)
+                        {
+                            // No sub folders, because the file name here is the identifier of corresponding item...
+                            foreach (var modelFile in modelsDir.GetFiles("item/*.json", SearchOption.TopDirectoryOnly))
+                            {
+                                string modelId = modelFile.FullName.Replace('\\', '/');
+                                modelId = modelId.Substring(modelDirLen); // e.g. 'item/acacia_boat.json'
+                                modelId = modelId.Substring(0, modelId.LastIndexOf('.')); // e.g. 'item/acacia_boat'
+                                ResourceLocation identifier = new ResourceLocation(nameSpace, modelId);
+                                // This model loader will load this model, its parent model(if not yet loaded),
+                                // and then add them to the manager's model dictionary
+                                manager.itemModelLoader.LoadItemModel(identifier, assetsDir.FullName.Replace('\\', '/'));
+                                count++;
+                                if (count % 5 == 0)
+                                {
+                                    loadStateInfo.infoText =  $"Loading item model {identifier}";
+                                    yield return null;
+                                }
+                            }
+                        }
+
                     }
 
                 }
@@ -172,7 +193,7 @@ namespace MinecraftClient.Resource
                         bool shouldLoad = false;
                         foreach (var stateId in blockPair.Value)
                         {
-                            if (!manager.finalTable.ContainsKey(stateId))
+                            if (!manager.stateModelTable.ContainsKey(stateId))
                                 shouldLoad = true;
                         }
                         

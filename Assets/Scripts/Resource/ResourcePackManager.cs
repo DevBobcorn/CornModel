@@ -12,20 +12,32 @@ namespace MinecraftClient.Resource
         public readonly Dictionary<ResourceLocation, string> textureTable = new Dictionary<ResourceLocation, string>();
 
         // Identifier -> Block model
-        public readonly Dictionary<ResourceLocation, BlockModel> modelsTable = new Dictionary<ResourceLocation, BlockModel>();
+        public readonly Dictionary<ResourceLocation, JsonModel> blockModelTable = new Dictionary<ResourceLocation, JsonModel>();
 
         // Block state numeral id -> Block state geometries (One single block state may have a list of models to use randomly)
-        public readonly Dictionary<int, BlockStateModel> finalTable = new Dictionary<int, BlockStateModel>();
+        public readonly Dictionary<int, BlockStateModel> stateModelTable = new Dictionary<int, BlockStateModel>();
+
+        // Identifier -> Raw item model
+        public readonly Dictionary<ResourceLocation, JsonModel> rawItemModelTable = new Dictionary<ResourceLocation, JsonModel>();
+
+        // Item numeral id -> Item model
+        public readonly Dictionary<int, ItemModel> itemModelTable = new Dictionary<int, ItemModel>();
 
         public readonly BlockModelLoader blockModelLoader;
         public readonly BlockStateModelLoader stateModelLoader;
+
+        public readonly ItemModelLoader itemModelLoader;
 
         public readonly List<ResourcePack> packs = new List<ResourcePack>();
 
         public ResourcePackManager()
         {
+            // Block model loaders
             blockModelLoader = new BlockModelLoader(this);
             stateModelLoader = new BlockStateModelLoader(this);
+
+            // Item model loader
+            itemModelLoader = new ItemModelLoader(this);
         }
 
         public void AddPack(ResourcePack pack)
@@ -37,8 +49,8 @@ namespace MinecraftClient.Resource
         {
             packs.Clear();
             textureTable.Clear();
-            modelsTable.Clear();
-            finalTable.Clear();
+            blockModelTable.Clear();
+            stateModelTable.Clear();
         }
 
         public IEnumerator LoadPacks(CoroutineFlag flag, LoadStateInfo loadStateInfo)
@@ -68,7 +80,7 @@ namespace MinecraftClient.Resource
 
             foreach (var stateItem in statesTable)
             {
-                if (!finalTable.ContainsKey(stateItem.Key))
+                if (!stateModelTable.ContainsKey(stateItem.Key))
                 {
                     Debug.LogWarning("Model for " + stateItem.Value.ToString() + "(state Id " + stateItem.Key + ") not loaded!");
                 }
@@ -77,7 +89,7 @@ namespace MinecraftClient.Resource
             loadStateInfo.infoText = string.Empty;
 
             Debug.Log("Resource packs loaded in " + (Time.realtimeSinceStartup - startTime) + " seconds.");
-            Debug.Log("Built " + finalTable.Count + " block state geometry lists.");
+            Debug.Log("Built " + stateModelTable.Count + " block state geometry lists.");
 
             flag.done = true;
 

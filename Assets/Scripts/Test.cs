@@ -137,17 +137,113 @@ public class Test : MonoBehaviour
             {
                 render.sharedMaterials =
                     new []{
-                        MaterialManager.GetBlockMaterial(RenderType.TRANSLUCENT),
-                        MaterialManager.GetBlockMaterial(BlockStatePalette.INSTANCE.GetRenderType(stateId))
+                        MaterialManager.GetAtlasMaterial(RenderType.TRANSLUCENT),
+                        MaterialManager.GetAtlasMaterial(BlockStatePalette.INSTANCE.GetRenderType(stateId))
                     };
             }
             else
-                render.sharedMaterial = MaterialManager.GetBlockMaterial(BlockStatePalette.INSTANCE.GetRenderType(stateId));
+                render.sharedMaterial = MaterialManager.GetAtlasMaterial(BlockStatePalette.INSTANCE.GetRenderType(stateId));
 
             altitude -= 2;
 
         }
 
+    }
+
+    public void TestBuildRawItem(string name, JsonModel rawItemModel, float3 pos)
+    {
+        var modelObject = new GameObject(name);
+        modelObject.transform.parent = transform;
+        modelObject.transform.localPosition = pos;
+
+        var filter = modelObject.AddComponent<MeshFilter>();
+        var render = modelObject.AddComponent<MeshRenderer>();
+
+        var collider = modelObject.AddComponent<MeshCollider>();
+
+        // Make and set mesh...
+        var visualBuffer = new VertexBuffer();
+
+        int fluidVertexCount = visualBuffer.vert.Length;
+        int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
+
+        var color = new float3(1F, 0F, 0F); // TODO Feed the right color
+
+        var rawItemModelWrapper = new BlockModelWrapper(rawItemModel, int2.zero, true);
+
+        var rawItemGeo = new ItemGeometry();
+        rawItemGeo.AppendWrapper(rawItemModelWrapper);
+        rawItemGeo.Finalize();
+
+        rawItemGeo.Build(ref visualBuffer, float3.zero, color);
+
+        int vertexCount = visualBuffer.vert.Length;
+        int triIdxCount = (vertexCount / 2) * 3;
+
+        var meshDataArr = Mesh.AllocateWritableMeshData(1);
+        var meshData = meshDataArr[0];
+
+        var vertAttrs = new NativeArray<VertexAttributeDescriptor>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+        vertAttrs[0] = new(VertexAttribute.Position,  dimension: 3, stream: 0);
+        vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 2, stream: 1);
+        vertAttrs[2]  = new(VertexAttribute.Color,    dimension: 3, stream: 2);
+
+        // Set mesh params
+        meshData.SetVertexBufferParams(vertexCount, vertAttrs);
+        vertAttrs.Dispose();
+
+        meshData.SetIndexBufferParams(triIdxCount, IndexFormat.UInt32);
+
+        // Set vertex data
+        // Positions
+        var positions = meshData.GetVertexData<float3>(0);
+        positions.CopyFrom(visualBuffer.vert);
+        // Tex Coordinates
+        var texCoords = meshData.GetVertexData<float2>(1);
+        texCoords.CopyFrom(visualBuffer.txuv);
+        // Vertex colors
+        var vertColors = meshData.GetVertexData<float3>(2);
+        vertColors.CopyFrom(visualBuffer.tint);
+
+        // Set face data
+        var triIndices = meshData.GetIndexData<uint>();
+        uint vi = 0; int ti = 0;
+        for (;vi < vertexCount;vi += 4U, ti += 6)
+        {
+            triIndices[ti]     = vi;
+            triIndices[ti + 1] = vi + 3U;
+            triIndices[ti + 2] = vi + 2U;
+            triIndices[ti + 3] = vi;
+            triIndices[ti + 4] = vi + 1U;
+            triIndices[ti + 5] = vi + 3U;
+        }
+
+        var bounds = new Bounds(new Vector3(0.5F, 0.5F, 0.5F), new Vector3(1F, 1F, 1F));
+
+        meshData.subMeshCount = 1;
+        meshData.SetSubMesh(0, new SubMeshDescriptor(0, triIdxCount)
+        {
+            bounds = bounds,
+            vertexCount = vertexCount
+        }, MeshUpdateFlags.DontRecalculateBounds);
+
+        var mesh = new Mesh
+        {
+            bounds = bounds,
+            name = "Proc Mesh"
+        };
+
+        Mesh.ApplyAndDisposeWritableMeshData(meshDataArr, mesh);
+
+        // Recalculate mesh normals
+        mesh.RecalculateNormals();
+
+        filter.sharedMesh   = mesh;
+        collider.sharedMesh = mesh;
+
+        render.sharedMaterial = MaterialManager.GetAtlasMaterial(RenderType.TRANSLUCENT); // TODO Get render type for item
+
+    
     }
 
     private IEnumerator DoBuild(string dataVersion, string resourceVersion)
@@ -156,10 +252,16 @@ public class Test : MonoBehaviour
 
         // First load all possible Block States...
         var blockLoadFlag = new CoroutineFlag();
-
         StartCoroutine(BlockStatePalette.INSTANCE.PrepareData(dataVersion, blockLoadFlag, loadStateInfo));
 
         while (!blockLoadFlag.done)
+            yield return wait;
+        
+        // Then load all Items...
+        var itemLoadFlag = new CoroutineFlag();
+        StartCoroutine(ItemPalette.INSTANCE.PrepareData(dataVersion, itemLoadFlag, loadStateInfo));
+
+        while (!itemLoadFlag.done)
             yield return wait;
 
         // Load texture atlas... TODO (Will be decently implemented in future)
@@ -193,7 +295,7 @@ public class Test : MonoBehaviour
         // Create a placeholder world as provider of block colors
         var world = new World();
 
-        foreach (var item in packManager.finalTable)
+        foreach (var item in packManager.stateModelTable)
         {
             int index = count - start;
             if (index >= 0)
@@ -201,6 +303,23 @@ public class Test : MonoBehaviour
                 var state = BlockStatePalette.INSTANCE.StatesTable[item.Key];
 
                 TestBuildState($"{item.Key} {state}", item.Key, state, item.Value, 0b111111, world, new((index % width) * 2, 0, (index / width) * 2));
+            }
+
+            count++;
+
+            if (count >= start + limit)
+                break;
+        }
+
+        count = 0;
+
+        foreach (var item in packManager.rawItemModelTable)
+        {
+            int index = count - start;
+            if (index >= 0)
+            {
+
+                TestBuildRawItem($"{item.Key}", item.Value, new((index % width) * 2, 3, (index / width) * 2));
             }
 
             count++;

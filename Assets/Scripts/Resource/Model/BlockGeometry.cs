@@ -363,7 +363,7 @@ namespace MinecraftClient.Resource
 
         }
 
-        private void AppendElement(BlockModel model, BlockModelElement elem, int2 zyRot, bool uvlock)
+        private void AppendElement(JsonModel model, JsonModelElement elem, int2 zyRot, bool uvlock)
         {
             float lx = Mathf.Min(elem.from.x, elem.to.x) / MC_VERT_SCALE;
             float mx = Mathf.Max(elem.from.x, elem.to.x) / MC_VERT_SCALE;

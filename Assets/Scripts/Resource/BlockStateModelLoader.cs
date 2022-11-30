@@ -70,10 +70,10 @@ namespace MinecraftClient.Resource
                 {
                     // For every possible state of this block, select the states that belong
                     // to this variant and give them this geometry list to use...
-                    if (!manager.finalTable.ContainsKey(stateId) && conditions.check(BlockStatePalette.INSTANCE.StatesTable[stateId]))
+                    if (!manager.stateModelTable.ContainsKey(stateId) && conditions.check(BlockStatePalette.INSTANCE.StatesTable[stateId]))
                     {
                         // Then this block state belongs to the current variant...
-                        manager.finalTable.Add(stateId, new BlockStateModel(results));
+                        manager.stateModelTable.Add(stateId, new BlockStateModel(results));
 
                     }
 
@@ -160,7 +160,7 @@ namespace MinecraftClient.Resource
             // Get the table into manager...
             foreach (var resultItem in resultsList)
             {
-                manager.finalTable.Add(resultItem.Key, new BlockStateModel(new BlockGeometry[]{ resultItem.Value.Finalize() }.ToList()));
+                manager.stateModelTable.Add(resultItem.Key, new BlockStateModel(new BlockGeometry[]{ resultItem.Value.Finalize() }.ToList()));
             }
 
         }

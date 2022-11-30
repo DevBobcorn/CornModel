@@ -1,26 +1,53 @@
 using System.IO;
 using UnityEngine;
+using Unity.Mathematics;
 
 namespace MinecraftClient.Resource
 {
-    public class BlockModelLoader
+    public class ItemModelLoader
     {
+        private const string GERERATED = "builtin/generated";
+        private const string ENTITY    = "builtin/entity";
+
         public static JsonModel INVALID_MODEL = new JsonModel();
+        public static JsonModel EMPTY_MODEL   = new JsonModel();
 
         private readonly ResourcePackManager manager;
 
-        public BlockModelLoader(ResourcePackManager manager)
+        public ItemModelLoader(ResourcePackManager manager)
         {
             this.manager = manager;
         }
 
+        public JsonModel GenerateItemModel(Json.JSONData modelData)
+        {
+            JsonModel model = new();
+
+            var elem = new JsonModelElement();
+
+            elem.faces.Add(FaceDir.UP, new() {
+                uv = new float4(0F, 0F, 16F, 16F),
+                texName = "layer0"
+            });
+
+            elem.faces.Add(FaceDir.DOWN, new() {
+                uv = new float4(0F, 0F, 16F, 16F),
+                texName = "layer0"
+            });
+
+            //Debug.Log("Generating model: " + modelData.StringValue);
+            model.elements.Add(elem);
+
+            return model;
+        }
+
         // Accepts the assets path of current resource pack so that it can easily find other model
         // files(when searching for a parent model which is not loaded yet, for example)
-        public JsonModel LoadBlockModel(ResourceLocation identifier, string assetsPath)
+        public JsonModel LoadItemModel(ResourceLocation identifier, string assetsPath)
         {
             // Check if this model is loaded already...
-            if (manager.blockModelTable.ContainsKey(identifier))
-                return manager.blockModelTable[identifier];
+            if (manager.rawItemModelTable.ContainsKey(identifier))
+                return manager.rawItemModelTable[identifier];
             
             string modelPath = assetsPath + '/' + identifier.nameSpace + "/models/" + identifier.path + ".json";
             if (File.Exists(modelPath))
@@ -37,15 +64,23 @@ namespace MinecraftClient.Resource
                 {
                     ResourceLocation parentIdentifier = ResourceLocation.fromString(modelData.Properties["parent"].StringValue.Replace('\\', '/'));
                     JsonModel parentModel;
-                    if (manager.blockModelTable.ContainsKey(parentIdentifier))
+                    if (manager.rawItemModelTable.ContainsKey(parentIdentifier))
                     {
                         // This parent is already loaded, get it...
-                        parentModel = manager.blockModelTable[parentIdentifier];
+                        parentModel = manager.rawItemModelTable[parentIdentifier];
                     }
                     else
                     {
-                        // This parent is not yet loaded, load it...
-                        parentModel = LoadBlockModel(parentIdentifier, assetsPath);
+                        parentModel = parentIdentifier.path switch {
+                            GERERATED    => GenerateItemModel(modelData),
+                            ENTITY       => EMPTY_MODEL,
+
+                            // This parent is not yet loaded, load it...
+                            _            => LoadItemModel(parentIdentifier, assetsPath)
+                        };
+
+                        if (parentModel == INVALID_MODEL)
+                            Debug.LogWarning($"Failed to load parent of {identifier}");
                     }
 
                     // Inherit parent textures...
@@ -102,7 +137,7 @@ namespace MinecraftClient.Resource
 
                 // It's also possible that this model is added somewhere before
                 // during parent loading process (though it shouldn't happen)
-                if (manager.blockModelTable.TryAdd(identifier, model))
+                if (manager.rawItemModelTable.TryAdd(identifier, model))
                 {
                     //Debug.Log("Model loaded: " + identifier);
                 }
@@ -115,7 +150,7 @@ namespace MinecraftClient.Resource
             }
             else
             {
-                Debug.LogWarning("Block model file not found: " + modelPath);
+                Debug.LogWarning("Model file not found: " + modelPath);
                 return INVALID_MODEL;
             }
         }

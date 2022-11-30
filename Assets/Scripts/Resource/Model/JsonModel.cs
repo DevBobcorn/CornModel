@@ -3,24 +3,13 @@ using UnityEngine;
 
 namespace MinecraftClient.Resource
 {
-    public struct TextureReference
-    {
-        public bool isPointer;
-        public string name;
-
-        public TextureReference(bool pointer, string name)
-        {
-            isPointer = pointer;
-            this.name = name;
-        }
-    }
-
-    public class BlockModel
+    public class JsonModel
     {
         private const int MAXDEPTH = 50;
+        
         // texName -> texture resource location
         public readonly Dictionary<string, TextureReference> textures = new Dictionary<string, TextureReference>();
-        public readonly List<BlockModelElement> elements = new List<BlockModelElement>();
+        public readonly List<JsonModelElement> elements = new List<JsonModelElement>();
 
         public ResourceLocation resolveTextureName(string texName)
         {
@@ -62,7 +51,5 @@ namespace MinecraftClient.Resource
             // Reach our destination, a tex ref whose name is a resource location
             return ResourceLocation.fromString(texRef.name);
         }
-
     }
-
 }
