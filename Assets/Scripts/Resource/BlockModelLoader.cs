@@ -19,10 +19,10 @@ namespace MinecraftClient.Resource
         public JsonModel LoadBlockModel(ResourceLocation identifier, string assetsPath)
         {
             // Check if this model is loaded already...
-            if (manager.blockModelTable.ContainsKey(identifier))
-                return manager.blockModelTable[identifier];
+            if (manager.BlockModelTable.ContainsKey(identifier))
+                return manager.BlockModelTable[identifier];
             
-            string modelPath = assetsPath + '/' + identifier.nameSpace + "/models/" + identifier.path + ".json";
+            string modelPath = $"{assetsPath}/{identifier.Namespace}/models/{identifier.Path}.json";
             if (File.Exists(modelPath))
             {
                 JsonModel model = new JsonModel();
@@ -37,10 +37,10 @@ namespace MinecraftClient.Resource
                 {
                     ResourceLocation parentIdentifier = ResourceLocation.fromString(modelData.Properties["parent"].StringValue.Replace('\\', '/'));
                     JsonModel parentModel;
-                    if (manager.blockModelTable.ContainsKey(parentIdentifier))
+                    if (manager.BlockModelTable.ContainsKey(parentIdentifier))
                     {
                         // This parent is already loaded, get it...
-                        parentModel = manager.blockModelTable[parentIdentifier];
+                        parentModel = manager.BlockModelTable[parentIdentifier];
                     }
                     else
                     {
@@ -49,17 +49,17 @@ namespace MinecraftClient.Resource
                     }
 
                     // Inherit parent textures...
-                    foreach (var tex in parentModel.textures)
+                    foreach (var tex in parentModel.Textures)
                     {
-                        model.textures.Add(tex.Key, tex.Value);
+                        model.Textures.Add(tex.Key, tex.Value);
                     }
 
                     // Inherit parent elements only if itself doesn't have those defined...
                     if (!containsElements)
                     {
-                        foreach (var elem in parentModel.elements)
+                        foreach (var elem in parentModel.Elements)
                         {
-                            model.elements.Add(elem);
+                            model.Elements.Add(elem);
                         }
                     }
                 }
@@ -79,13 +79,13 @@ namespace MinecraftClient.Resource
                             texRef = new TextureReference(false, texItem.Value.StringValue);
                         }
 
-                        if (model.textures.ContainsKey(texItem.Key)) // Override this texture reference...
+                        if (model.Textures.ContainsKey(texItem.Key)) // Override this texture reference...
                         {
-                            model.textures[texItem.Key] = texRef;
+                            model.Textures[texItem.Key] = texRef;
                         }
                         else // Add a new texture reference...
                         {
-                            model.textures.Add(texItem.Key, texRef);
+                            model.Textures.Add(texItem.Key, texRef);
                         }
                     }
 
@@ -96,26 +96,24 @@ namespace MinecraftClient.Resource
                     var elemData = modelData.Properties["elements"].DataArray;
                     foreach (var elemItem in elemData)
                     {
-                        model.elements.Add(JsonModelElement.fromJson(elemItem));
+                        model.Elements.Add(JsonModelElement.fromJson(elemItem));
                     }
                 }
 
                 // It's also possible that this model is added somewhere before
                 // during parent loading process (though it shouldn't happen)
-                if (manager.blockModelTable.TryAdd(identifier, model))
+                if (manager.BlockModelTable.TryAdd(identifier, model))
                 {
                     //Debug.Log("Model loaded: " + identifier);
                 }
                 else
-                {
-                    Debug.LogWarning("Trying to add model twice: " + identifier);
-                }
+                    Debug.LogWarning($"Trying to add model twice: {identifier}");
 
                 return model;
             }
             else
             {
-                Debug.LogWarning("Block model file not found: " + modelPath);
+                Debug.LogWarning($"Block model file not found: {modelPath}");
                 return INVALID_MODEL;
             }
         }

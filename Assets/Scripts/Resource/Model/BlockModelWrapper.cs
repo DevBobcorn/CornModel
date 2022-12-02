@@ -22,7 +22,7 @@ namespace MinecraftClient.Resource
             {
                 ResourceLocation modelIdentifier = ResourceLocation.fromString(data.Properties["model"].StringValue);
                 // Check if the model can be found...
-                if (manager.blockModelTable.ContainsKey(modelIdentifier))
+                if (manager.BlockModelTable.ContainsKey(modelIdentifier))
                 {
                     int zr = 0, yr = 0;
                     bool uvlock = false;
@@ -52,7 +52,7 @@ namespace MinecraftClient.Resource
                     if (data.Properties.ContainsKey("uvlock"))
                         bool.TryParse(data.Properties["uvlock"].StringValue, out uvlock);
 
-                    return new BlockModelWrapper(manager.blockModelTable[modelIdentifier], new int2(zr, yr), uvlock);
+                    return new BlockModelWrapper(manager.BlockModelTable[modelIdentifier], new int2(zr, yr), uvlock);
                 }
 
             }

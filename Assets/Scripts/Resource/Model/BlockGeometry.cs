@@ -42,7 +42,7 @@ namespace MinecraftClient.Resource
         public void AppendWrapper(BlockModelWrapper wrapper)
         {
             // Build things up!
-            foreach (var elem in wrapper.model.elements)
+            foreach (var elem in wrapper.model.Elements)
             {
                 AppendElement(wrapper.model, elem, wrapper.zyRot, wrapper.uvlock);
             }

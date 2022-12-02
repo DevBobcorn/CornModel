@@ -1,14 +1,16 @@
-using System.Collections.Generic;
+using MinecraftClient.Rendering;
 
 namespace MinecraftClient.Resource
 {
     public class ItemModel
     {
-        public readonly ItemGeometry[] Geometries;
+        public readonly ItemGeometry Geometry;
+        public readonly RenderType RenderType;
 
-        public ItemModel(List<ItemGeometry> geometries)
+        public ItemModel(ItemGeometry geometry, RenderType renderType)
         {
-            Geometries = geometries.ToArray();
+            Geometry = geometry;
+            RenderType = renderType;
         }
 
     }

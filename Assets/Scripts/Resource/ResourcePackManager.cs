@@ -9,35 +9,37 @@ namespace MinecraftClient.Resource
     public class ResourcePackManager
     {
         // Identifier -> Texture path
-        public readonly Dictionary<ResourceLocation, string> textureTable = new Dictionary<ResourceLocation, string>();
+        public readonly Dictionary<ResourceLocation, string> TextureTable = new Dictionary<ResourceLocation, string>();
 
         // Identifier -> Block model
-        public readonly Dictionary<ResourceLocation, JsonModel> blockModelTable = new Dictionary<ResourceLocation, JsonModel>();
+        public readonly Dictionary<ResourceLocation, JsonModel> BlockModelTable = new Dictionary<ResourceLocation, JsonModel>();
 
         // Block state numeral id -> Block state geometries (One single block state may have a list of models to use randomly)
-        public readonly Dictionary<int, BlockStateModel> stateModelTable = new Dictionary<int, BlockStateModel>();
+        public readonly Dictionary<int, BlockStateModel> StateModelTable = new Dictionary<int, BlockStateModel>();
 
         // Identifier -> Raw item model
-        public readonly Dictionary<ResourceLocation, JsonModel> rawItemModelTable = new Dictionary<ResourceLocation, JsonModel>();
+        public readonly Dictionary<ResourceLocation, JsonModel> RawItemModelTable = new Dictionary<ResourceLocation, JsonModel>();
 
         // Item numeral id -> Item model
-        public readonly Dictionary<int, ItemModel> itemModelTable = new Dictionary<int, ItemModel>();
+        public readonly Dictionary<int, ItemModel> ItemModelTable = new Dictionary<int, ItemModel>();
 
-        public readonly BlockModelLoader blockModelLoader;
-        public readonly BlockStateModelLoader stateModelLoader;
+        public readonly HashSet<ResourceLocation> GeneratedItemModels = new();
 
-        public readonly ItemModelLoader itemModelLoader;
+        public readonly BlockModelLoader BlockModelLoader;
+        public readonly BlockStateModelLoader StateModelLoader;
 
-        public readonly List<ResourcePack> packs = new List<ResourcePack>();
+        public readonly ItemModelLoader ItemModelLoader;
+
+        private readonly List<ResourcePack> packs = new List<ResourcePack>();
 
         public ResourcePackManager()
         {
             // Block model loaders
-            blockModelLoader = new BlockModelLoader(this);
-            stateModelLoader = new BlockStateModelLoader(this);
+            BlockModelLoader = new BlockModelLoader(this);
+            StateModelLoader = new BlockStateModelLoader(this);
 
             // Item model loader
-            itemModelLoader = new ItemModelLoader(this);
+            ItemModelLoader = new ItemModelLoader(this);
         }
 
         public void AddPack(ResourcePack pack)
@@ -48,9 +50,12 @@ namespace MinecraftClient.Resource
         public void ClearPacks()
         {
             packs.Clear();
-            textureTable.Clear();
-            blockModelTable.Clear();
-            stateModelTable.Clear();
+            TextureTable.Clear();
+            BlockModelTable.Clear();
+            StateModelTable.Clear();
+            RawItemModelTable.Clear();
+            ItemModelTable.Clear();
+            GeneratedItemModels.Clear();
         }
 
         public IEnumerator LoadPacks(CoroutineFlag flag, LoadStateInfo loadStateInfo)
@@ -71,6 +76,7 @@ namespace MinecraftClient.Resource
                 if (pack.IsValid)
                 {
                     yield return pack.BuildStateGeometries(this, loadStateInfo);
+                    yield return pack.BuildItemGeometries(this, loadStateInfo);
                 }
                 
             }
@@ -80,16 +86,16 @@ namespace MinecraftClient.Resource
 
             foreach (var stateItem in statesTable)
             {
-                if (!stateModelTable.ContainsKey(stateItem.Key))
+                if (!StateModelTable.ContainsKey(stateItem.Key))
                 {
-                    Debug.LogWarning("Model for " + stateItem.Value.ToString() + "(state Id " + stateItem.Key + ") not loaded!");
+                    Debug.LogWarning($"Model for {stateItem.Value}(state Id {stateItem.Key}) not loaded!");
                 }
             }
 
             loadStateInfo.infoText = string.Empty;
 
-            Debug.Log("Resource packs loaded in " + (Time.realtimeSinceStartup - startTime) + " seconds.");
-            Debug.Log("Built " + stateModelTable.Count + " block state geometry lists.");
+            Debug.Log($"Resource packs loaded in {Time.realtimeSinceStartup - startTime} seconds.");
+            Debug.Log($"Built {StateModelTable.Count} block state geometry lists.");
 
             flag.done = true;
 

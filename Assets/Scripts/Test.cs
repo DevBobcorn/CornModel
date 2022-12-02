@@ -61,7 +61,7 @@ public class Test : MonoBehaviour
             var vertAttrs = new NativeArray<VertexAttributeDescriptor>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             vertAttrs[0] = new(VertexAttribute.Position,  dimension: 3, stream: 0);
             vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 2, stream: 1);
-            vertAttrs[2]  = new(VertexAttribute.Color,    dimension: 3, stream: 2);
+            vertAttrs[2] = new(VertexAttribute.Color,     dimension: 3, stream: 2);
 
             // Set mesh params
             meshData.SetVertexBufferParams(vertexCount, vertAttrs);
@@ -138,11 +138,11 @@ public class Test : MonoBehaviour
                 render.sharedMaterials =
                     new []{
                         MaterialManager.GetAtlasMaterial(RenderType.TRANSLUCENT),
-                        MaterialManager.GetAtlasMaterial(BlockStatePalette.INSTANCE.GetRenderType(stateId))
+                        MaterialManager.GetAtlasMaterial(stateModel.RenderType)
                     };
             }
             else
-                render.sharedMaterial = MaterialManager.GetAtlasMaterial(BlockStatePalette.INSTANCE.GetRenderType(stateId));
+                render.sharedMaterial = MaterialManager.GetAtlasMaterial(stateModel.RenderType);
 
             altitude -= 2;
 
@@ -150,7 +150,7 @@ public class Test : MonoBehaviour
 
     }
 
-    public void TestBuildRawItem(string name, JsonModel rawItemModel, float3 pos)
+    public void TestBuildItem(string name, int itemNumId, ItemModel itemModel, float3 pos)
     {
         var modelObject = new GameObject(name);
         modelObject.transform.parent = transform;
@@ -169,13 +169,7 @@ public class Test : MonoBehaviour
 
         var color = new float3(1F, 0F, 0F); // TODO Feed the right color
 
-        var rawItemModelWrapper = new BlockModelWrapper(rawItemModel, int2.zero, true);
-
-        var rawItemGeo = new ItemGeometry();
-        rawItemGeo.AppendWrapper(rawItemModelWrapper);
-        rawItemGeo.Finalize();
-
-        rawItemGeo.Build(ref visualBuffer, float3.zero, color);
+        itemModel.Geometry.Build(ref visualBuffer, float3.zero, color);
 
         int vertexCount = visualBuffer.vert.Length;
         int triIdxCount = (vertexCount / 2) * 3;
@@ -186,7 +180,7 @@ public class Test : MonoBehaviour
         var vertAttrs = new NativeArray<VertexAttributeDescriptor>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
         vertAttrs[0] = new(VertexAttribute.Position,  dimension: 3, stream: 0);
         vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 2, stream: 1);
-        vertAttrs[2]  = new(VertexAttribute.Color,    dimension: 3, stream: 2);
+        vertAttrs[2] = new(VertexAttribute.Color,     dimension: 3, stream: 2);
 
         // Set mesh params
         meshData.SetVertexBufferParams(vertexCount, vertAttrs);
@@ -241,7 +235,7 @@ public class Test : MonoBehaviour
         filter.sharedMesh   = mesh;
         collider.sharedMesh = mesh;
 
-        render.sharedMaterial = MaterialManager.GetAtlasMaterial(RenderType.TRANSLUCENT); // TODO Get render type for item
+        render.sharedMaterial = MaterialManager.GetAtlasMaterial(itemModel.RenderType);
 
     
     }
@@ -289,20 +283,20 @@ public class Test : MonoBehaviour
 
         float startTime = Time.realtimeSinceStartup;
 
-        int start = 64, limit = 4096;
+        int start = 0, limit = 4096;
         int count = 0, width = 64;
 
-        // Create a placeholder world as provider of block colors
+        /* Create a dummy world as provider of block colors
         var world = new World();
 
-        foreach (var item in packManager.stateModelTable)
+        foreach (var pair in packManager.stateModelTable)
         {
             int index = count - start;
             if (index >= 0)
             {
-                var state = BlockStatePalette.INSTANCE.StatesTable[item.Key];
+                var state = BlockStatePalette.INSTANCE.StatesTable[pair.Key];
 
-                TestBuildState($"[{item.Key}] {state}", item.Key, state, item.Value, 0b111111, world, new((index % width) * 2, 0, (index / width) * 2));
+                TestBuildState($"Block [{pair.Key}] {state}", pair.Key, state, pair.Value, 0b111111, world, new((index % width) * 2, 0, (index / width) * 2));
             }
 
             count++;
@@ -311,15 +305,16 @@ public class Test : MonoBehaviour
                 break;
         }
 
-        count = 0;
+        count = 0;*/
 
-        foreach (var item in packManager.rawItemModelTable)
+        foreach (var pair in packManager.ItemModelTable)
         {
             int index = count - start;
             if (index >= 0)
             {
+                var item = ItemPalette.INSTANCE.ItemsTable[pair.Key];
 
-                TestBuildRawItem($"{item.Key}", item.Value, new((index % width) * 2, 3, (index / width) * 2));
+                TestBuildItem($"Item [{pair.Key}] {item}", pair.Key, pair.Value, new((index % width) * 2, 20, (index / width) * 2));
             }
 
             count++;

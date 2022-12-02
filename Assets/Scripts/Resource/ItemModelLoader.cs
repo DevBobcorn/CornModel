@@ -1,6 +1,5 @@
 using System.IO;
 using UnityEngine;
-using Unity.Mathematics;
 
 namespace MinecraftClient.Resource
 {
@@ -19,37 +18,39 @@ namespace MinecraftClient.Resource
             this.manager = manager;
         }
 
-        public JsonModel GenerateItemModel(Json.JSONData modelData)
+        public JsonModel GenerateItemModel(Json.JSONData modelData, ref bool generated)
         {
             JsonModel model = new();
 
             var elem = new JsonModelElement();
 
             elem.faces.Add(FaceDir.UP, new() {
-                uv = new float4(0F, 0F, 16F, 16F),
+                uv = new(0F, 0F, 16F, 16F),
                 texName = "layer0"
             });
 
             elem.faces.Add(FaceDir.DOWN, new() {
-                uv = new float4(0F, 0F, 16F, 16F),
+                uv = new(0F, 0F, 16F, 16F),
                 texName = "layer0"
             });
 
             //Debug.Log("Generating model: " + modelData.StringValue);
-            model.elements.Add(elem);
+            model.Elements.Add(elem);
+
+            generated = true;
 
             return model;
         }
 
         // Accepts the assets path of current resource pack so that it can easily find other model
         // files(when searching for a parent model which is not loaded yet, for example)
-        public JsonModel LoadItemModel(ResourceLocation identifier, string assetsPath)
+        public JsonModel LoadItemModel(ResourceLocation identifier, ref bool generated, string assetsPath)
         {
             // Check if this model is loaded already...
-            if (manager.rawItemModelTable.ContainsKey(identifier))
-                return manager.rawItemModelTable[identifier];
+            if (manager.RawItemModelTable.ContainsKey(identifier))
+                return manager.RawItemModelTable[identifier];
             
-            string modelPath = assetsPath + '/' + identifier.nameSpace + "/models/" + identifier.path + ".json";
+            string modelPath = $"{assetsPath}/{identifier.Namespace}/models/{identifier.Path}.json";
             if (File.Exists(modelPath))
             {
                 JsonModel model = new JsonModel();
@@ -64,19 +65,33 @@ namespace MinecraftClient.Resource
                 {
                     ResourceLocation parentIdentifier = ResourceLocation.fromString(modelData.Properties["parent"].StringValue.Replace('\\', '/'));
                     JsonModel parentModel;
-                    if (manager.rawItemModelTable.ContainsKey(parentIdentifier))
+
+                    bool parentIsGenerated = manager.GeneratedItemModels.Contains(parentIdentifier);
+
+                    if (manager.RawItemModelTable.ContainsKey(parentIdentifier) && !parentIsGenerated)
                     {
                         // This parent is already loaded, get it...
-                        parentModel = manager.rawItemModelTable[parentIdentifier];
+                        parentModel = manager.RawItemModelTable[parentIdentifier];
+                    }
+                    else if (manager.BlockModelTable.ContainsKey(parentIdentifier))
+                    {
+                        // This parent is already loaded, get it...
+                        parentModel = manager.BlockModelTable[parentIdentifier];
                     }
                     else
                     {
-                        parentModel = parentIdentifier.path switch {
-                            GERERATED    => GenerateItemModel(modelData),
-                            ENTITY       => EMPTY_MODEL,
+                        if (parentIsGenerated)
+                        {   // Clear this parent from model cache, and re-generate it
+                            if (manager.RawItemModelTable.ContainsKey(parentIdentifier))
+                                manager.RawItemModelTable.Remove(parentIdentifier);
+                        }
 
+                        parentModel = parentIdentifier.Path switch {
+                            GERERATED    => GenerateItemModel(modelData, ref generated),
+                            ENTITY       => EMPTY_MODEL,
+                            
                             // This parent is not yet loaded, load it...
-                            _            => LoadItemModel(parentIdentifier, assetsPath)
+                            _            => LoadItemModel(parentIdentifier, ref generated, assetsPath)
                         };
 
                         if (parentModel == INVALID_MODEL)
@@ -84,17 +99,17 @@ namespace MinecraftClient.Resource
                     }
 
                     // Inherit parent textures...
-                    foreach (var tex in parentModel.textures)
+                    foreach (var tex in parentModel.Textures)
                     {
-                        model.textures.Add(tex.Key, tex.Value);
+                        model.Textures.Add(tex.Key, tex.Value);
                     }
 
                     // Inherit parent elements only if itself doesn't have those defined...
                     if (!containsElements)
                     {
-                        foreach (var elem in parentModel.elements)
+                        foreach (var elem in parentModel.Elements)
                         {
-                            model.elements.Add(elem);
+                            model.Elements.Add(elem);
                         }
                     }
                 }
@@ -114,13 +129,13 @@ namespace MinecraftClient.Resource
                             texRef = new TextureReference(false, texItem.Value.StringValue);
                         }
 
-                        if (model.textures.ContainsKey(texItem.Key)) // Override this texture reference...
+                        if (model.Textures.ContainsKey(texItem.Key)) // Override this texture reference...
                         {
-                            model.textures[texItem.Key] = texRef;
+                            model.Textures[texItem.Key] = texRef;
                         }
                         else // Add a new texture reference...
                         {
-                            model.textures.Add(texItem.Key, texRef);
+                            model.Textures.Add(texItem.Key, texRef);
                         }
                     }
 
@@ -131,26 +146,30 @@ namespace MinecraftClient.Resource
                     var elemData = modelData.Properties["elements"].DataArray;
                     foreach (var elemItem in elemData)
                     {
-                        model.elements.Add(JsonModelElement.fromJson(elemItem));
+                        model.Elements.Add(JsonModelElement.fromJson(elemItem));
                     }
                 }
 
                 // It's also possible that this model is added somewhere before
                 // during parent loading process (though it shouldn't happen)
-                if (manager.rawItemModelTable.TryAdd(identifier, model))
+                if (manager.RawItemModelTable.TryAdd(identifier, model))
                 {
                     //Debug.Log("Model loaded: " + identifier);
                 }
                 else
+                    Debug.LogWarning($"Trying to add model twice: {identifier}");
+                
+                if (generated && !manager.GeneratedItemModels.Contains(identifier))
                 {
-                    Debug.LogWarning("Trying to add model twice: " + identifier);
+                    manager.GeneratedItemModels.Add(identifier);
+                    //Debug.Log($"Marked item model {identifier} as generated");
                 }
 
                 return model;
             }
             else
             {
-                Debug.LogWarning("Model file not found: " + modelPath);
+                Debug.LogWarning($"Item model file not found: {modelPath}");
                 return INVALID_MODEL;
             }
         }

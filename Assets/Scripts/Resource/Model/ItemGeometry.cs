@@ -15,12 +15,12 @@ namespace MinecraftClient.Resource
         public readonly List<float2> uvs       = new();
         public readonly List<int> tintIndices  = new();
 
-        public void AppendWrapper(BlockModelWrapper wrapper)
+        public ItemGeometry(JsonModel model)
         {
             // Build things up!
-            foreach (var elem in wrapper.model.elements)
+            foreach (var elem in model.Elements)
             {
-                AppendElement(wrapper.model, elem, wrapper.zyRot, wrapper.uvlock);
+                AppendElement(model, elem);
             }
         }
 
@@ -68,7 +68,7 @@ namespace MinecraftClient.Resource
 
         }
 
-        private void AppendElement(JsonModel model, JsonModelElement elem, int2 zyRot, bool uvlock)
+        private void AppendElement(JsonModel model, JsonModelElement elem)
         {
             float lx = Mathf.Min(elem.from.x, elem.to.x) / MC_VERT_SCALE;
             float mx = Mathf.Max(elem.from.x, elem.to.x) / MC_VERT_SCALE;
@@ -86,11 +86,6 @@ namespace MinecraftClient.Resource
 
             if (elem.rotAngle != 0F) // Apply model rotation...
                 Rotations.RotateVertices(ref elemVerts, elem.pivot / MC_VERT_SCALE, elem.axis, -elem.rotAngle, elem.rescale); // TODO Check angle
-            
-            bool stateRotated = zyRot.x != 0 || zyRot.y != 0;
-
-            if (stateRotated) // Apply state rotation...
-                Rotations.RotateWrapper(ref elemVerts, zyRot);
 
             foreach (var facePair in elem.faces)
             {
@@ -139,11 +134,7 @@ namespace MinecraftClient.Resource
 
                 ResourceLocation texIdentifier = model.resolveTextureName(face.texName);
 
-                // This value is mapped only when uvlock is on, according to this block state's
-                // state rotation, and it rotates the area of texture which is used on the face
-                int uvAreaRot = stateRotated && uvlock ? uvlockMap[zyRot][facePair.Key] : 0;
-
-                float2[] remappedUVs = RemapUVs(face.uv / MC_UV_SCALE, texIdentifier, uvAreaRot);
+                float2[] remappedUVs = RemapUVs(face.uv / MC_UV_SCALE, texIdentifier, 0);
 
                 // This rotation doesn't change the area of texture used...
                 // See https://minecraft.fandom.com/wiki/Model#Block_models
@@ -188,68 +179,5 @@ namespace MinecraftClient.Resource
             return AtlasManager.GetUVs(source, uvs, areaRot);
         }
 
-        private static Dictionary<int2, Dictionary<FaceDir, int>> CreateUVLockMap()
-        {
-            var areaRotMap = new Dictionary<int2, Dictionary<FaceDir, int>>();
-
-            for (int roty = 0;roty < 4;roty++)
-            {
-                for (int rotz = 0;rotz < 4;rotz++)
-                {
-                    // Store actual rotation values currently applied to these faces (due to vertex(mesh) rotation)
-                    var localRot = new Dictionary<FaceDir, int>();
-
-                    foreach (FaceDir dir in Enum.GetValues(typeof (FaceDir)))
-                        localRot.Add(dir, 0);
-
-                    switch (rotz)
-                    {
-                        case 0:
-                            localRot[FaceDir.UP]   =  roty;
-                            localRot[FaceDir.DOWN] = -roty;
-                            break;
-                        case 1: // Locally rotate 90 Deg Clockwise
-                            localRot[FaceDir.UP]    =  2;
-                            localRot[FaceDir.DOWN]  =  0;
-                            localRot[FaceDir.WEST]  = -1;
-                            localRot[FaceDir.EAST]  =  1;
-                            localRot[FaceDir.SOUTH] =  roty;
-                            localRot[FaceDir.NORTH] = -roty + 2;
-                            break;
-                        case 2: // Locally rotate 180 Deg
-                            localRot[FaceDir.UP]    = -roty;
-                            localRot[FaceDir.DOWN]  =  roty;
-                            localRot[FaceDir.WEST]  =  2;
-                            localRot[FaceDir.EAST]  =  2;
-                            localRot[FaceDir.SOUTH] =  2;
-                            localRot[FaceDir.NORTH] =  2;
-                            break;
-                        case 3: // Locally rotate 90 Deg Counter-Clockwise
-                            localRot[FaceDir.UP]    =  0;
-                            localRot[FaceDir.DOWN]  =  2;
-                            localRot[FaceDir.WEST]  =  1;
-                            localRot[FaceDir.EAST]  = -1;
-                            localRot[FaceDir.SOUTH] = -roty;
-                            localRot[FaceDir.NORTH] =  roty + 2;
-                            break;
-                    }
-
-                    var result = new Dictionary<FaceDir, int>();
-
-                    // Cancel horizontal texture rotations (front / right / back / left)
-                    foreach (FaceDir dir in Enum.GetValues(typeof (FaceDir)))
-                        result.Add(dir, (8 - localRot.GetValueOrDefault(dir, 0)) % 4);
-
-                    areaRotMap.Add(new int2(rotz, roty), result);
-
-                }
-                
-            }
-            
-            return areaRotMap;
-
-        }
-
-        private static readonly Dictionary<int2, Dictionary<FaceDir, int>> uvlockMap = CreateUVLockMap();
     }
 }
