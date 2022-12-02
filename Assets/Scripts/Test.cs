@@ -302,7 +302,7 @@ public class Test : MonoBehaviour
             {
                 var state = BlockStatePalette.INSTANCE.StatesTable[item.Key];
 
-                TestBuildState($"{item.Key} {state}", item.Key, state, item.Value, 0b111111, world, new((index % width) * 2, 0, (index / width) * 2));
+                TestBuildState($"[{item.Key}] {state}", item.Key, state, item.Value, 0b111111, world, new((index % width) * 2, 0, (index / width) * 2));
             }
 
             count++;
@@ -329,7 +329,7 @@ public class Test : MonoBehaviour
 
         }
 
-        loadStateInfo.infoText = $"Minecraft block meshes built in {Time.realtimeSinceStartup - startTime} seconds.";
+        loadStateInfo.infoText = $"Voxel meshes built in {Time.realtimeSinceStartup - startTime} seconds.";
     }
 
     void Start()

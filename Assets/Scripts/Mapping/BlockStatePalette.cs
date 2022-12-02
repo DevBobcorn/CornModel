@@ -67,9 +67,7 @@ namespace MinecraftClient.Mapping
             string colorsPath = PathHelper.GetExtraDataFile("block_colors-1.19.json");
 
             if (!File.Exists(statesPath) || !File.Exists(listsPath) || !File.Exists(colorsPath))
-            {
                 throw new FileNotFoundException("Block data not complete!");
-            }
 
             // First read special block lists...
             var noOcclusion = new List<ResourceLocation>();
@@ -213,11 +211,11 @@ namespace MinecraftClient.Mapping
 
             Debug.Log($"{statesTable.Count} block states loaded.");
 
-            renderTypeTable.Clear();
-            loadStateInfo.infoText = $"Loading lists of render types";
+            // Load block color rules...
+            blockColorRules.Clear();
+            loadStateInfo.infoText = $"Loading block color rules";
             yield return null;
 
-            // Load block color rules...
             Json.JSONData colorRules = Json.ParseJson(File.ReadAllText(colorsPath, Encoding.UTF8));
 
             if (colorRules.Properties.ContainsKey("dynamic"))
@@ -230,8 +228,8 @@ namespace MinecraftClient.Mapping
                         "foliage"  => (world, loc, state) => world.GetFoliageColor(loc),
                         "grass"    => (world, loc, state) => world.GetGrassColor(loc),
                         "redstone" => (world, loc, state) => {
-                            if (state.props.ContainsKey("power"))
-                                return new(float.Parse(state.props["power"]) / 16F, 0F, 0F);
+                            if (state.Properties.ContainsKey("power"))
+                                return new(float.Parse(state.Properties["power"]) / 16F, 0F, 0F);
                             return BlockGeometry.DEFAULT_COLOR;
                         },
 
@@ -288,6 +286,10 @@ namespace MinecraftClient.Mapping
             yield return null;
             
             // Load and apply block render types...
+            renderTypeTable.Clear();
+            loadStateInfo.infoText = $"Loading lists of render types";
+            yield return null;
+
             string renderTypePath = PathHelper.GetExtraDataFile("block_render_type.json");
             if (File.Exists(renderTypePath))
             {
