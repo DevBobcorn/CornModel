@@ -153,8 +153,19 @@ namespace MinecraftClient.Resource
                                 ResourceLocation identifier = new ResourceLocation(nameSpace, modelId);
                                 // This model loader will load this model, its parent model(if not yet loaded),
                                 // and then add them to the manager's model dictionary
-                                bool generated = false;
-                                manager.ItemModelLoader.LoadItemModel(identifier, ref generated, assetsDir.FullName.Replace('\\', '/'));
+                                manager.ItemModelLoader.LoadItemModel(identifier, assetsDir.FullName.Replace('\\', '/'));
+
+                                if (manager.GeneratedItemModels.Contains(identifier)) // This model should be generated
+                                {
+                                    var model = manager.RawItemModelTable[identifier];
+
+                                    // Get layer count of this item model
+                                    int layerCount = model.Textures.Count;
+
+                                    model.Elements.AddRange(
+                                            manager.ItemModelLoader.GetGeneratedItemModelElements(layerCount, 16).ToArray());
+                                }
+                                
                                 count++;
                                 if (count % 5 == 0)
                                 {
