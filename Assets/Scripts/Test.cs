@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -9,6 +10,7 @@ using MinecraftClient;
 using MinecraftClient.Rendering;
 using MinecraftClient.Resource;
 using MinecraftClient.Mapping;
+using MinecraftClient.Inventory;
 
 public class Test : MonoBehaviour
 {
@@ -150,7 +152,7 @@ public class Test : MonoBehaviour
 
     }
 
-    public void TestBuildItem(string name, int itemNumId, ItemModel itemModel, float3 pos)
+    public void TestBuildItem(string name, int itemNumId, ItemStack itemStack, ItemModel itemModel, float3 pos)
     {
         var modelObject = new GameObject(name);
         modelObject.transform.parent = transform;
@@ -167,9 +169,15 @@ public class Test : MonoBehaviour
         int fluidVertexCount = visualBuffer.vert.Length;
         int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
 
-        var color = new float3(1F, 0F, 0F); // TODO Feed the right color
+        float3[] colors;
 
-        itemModel.Geometry.Build(ref visualBuffer, float3.zero, color);
+        var tintFunc = ItemPalette.INSTANCE.GetTintRule(itemNumId);
+        if (tintFunc is null)
+            colors = new float3[]{ new(1F, 0F, 0F), new(0F, 0F, 1F), new(0F, 1F, 0F) };
+        else
+            colors = tintFunc.Invoke(itemStack);
+
+        itemModel.Geometry.Build(ref visualBuffer, float3.zero, colors);
 
         int vertexCount = visualBuffer.vert.Length;
         int triIdxCount = (vertexCount / 2) * 3;
@@ -286,10 +294,10 @@ public class Test : MonoBehaviour
         int start = 0, limit = 4096;
         int count = 0, width = 64;
 
-        /* Create a dummy world as provider of block colors
+        // Create a dummy world as provider of block colors
         var world = new World();
 
-        foreach (var pair in packManager.stateModelTable)
+        foreach (var pair in packManager.StateModelTable)
         {
             int index = count - start;
             if (index >= 0)
@@ -305,7 +313,7 @@ public class Test : MonoBehaviour
                 break;
         }
 
-        count = 0;*/
+        count = 0;
 
         foreach (var pair in packManager.ItemModelTable)
         {
@@ -313,8 +321,9 @@ public class Test : MonoBehaviour
             if (index >= 0)
             {
                 var item = ItemPalette.INSTANCE.ItemsTable[pair.Key];
+                var itemStack = new ItemStack(item, 1, null);
 
-                TestBuildItem($"Item [{pair.Key}] {item}", pair.Key, pair.Value, new((index % width) * 2, 20, (index / width) * 2));
+                TestBuildItem($"Item [{pair.Key}] {item}", pair.Key, itemStack, pair.Value, new((index % width) * 2, 20, (index / width) * 2));
             }
 
             count++;

@@ -23,7 +23,7 @@ namespace MinecraftClient.Resource
         // 
         private static Dictionary<int2, List<JsonModelElement>> generatedModels = new();
 
-        public List<JsonModelElement> GetGeneratedItemModelElements(int layerCount, int precision)
+        public List<JsonModelElement> GetGeneratedItemModelElements(int layerCount, int precision, bool useItemColor)
         {
             int2 modelKey = new(layerCount, precision);
 
@@ -43,12 +43,14 @@ namespace MinecraftClient.Resource
 
                     elem.faces.Add(FaceDir.NORTH, new() {
                         uv = new(0F, 0F, 16F, 16F),
-                        texName = layerTexName
+                        texName = layerTexName,
+                        tintIndex = useItemColor ? layer : -1
                     });
 
                     elem.faces.Add(FaceDir.SOUTH, new() {
                         uv = new(16F, 0F, 0F, 16F),
-                        texName = layerTexName
+                        texName = layerTexName,
+                        tintIndex = useItemColor ? layer : -1
                     });
 
                     for (int i = 0;i < precision;i++)
@@ -69,22 +71,26 @@ namespace MinecraftClient.Resource
                         // Left faces
                         vertStripe.faces.Add(FaceDir.EAST, new() {
                             uv = new(fracL1,       0F,       fracR1, 16F),
-                            texName = layerTexName
+                            texName = layerTexName,
+                            tintIndex = useItemColor ? layer : -1
                         });
                         // Right faces
                         vertStripe.faces.Add(FaceDir.WEST, new() {
                             uv = new(16F - fracL2, 0F, 16F - fracR2, 16F),
-                            texName = layerTexName
+                            texName = layerTexName,
+                            tintIndex = useItemColor ? layer : -1
                         });
                         // Top faces
                         horzStripe.faces.Add(FaceDir.UP, new() {
                             uv = new(16F,       fracL1, 0F,       fracR1),
-                            texName = layerTexName
+                            texName = layerTexName,
+                            tintIndex = useItemColor ? layer : -1
                         });
                         // Bottom faces
                         horzStripe.faces.Add(FaceDir.DOWN, new() {
                             uv = new(16F, 16F - fracL2, 0F, 16F - fracR2),
-                            texName = layerTexName
+                            texName = layerTexName,
+                            tintIndex = useItemColor ? layer : -1
                         });
 
                         model.Add(vertStripe);
@@ -127,7 +133,9 @@ namespace MinecraftClient.Resource
                     switch (parentIdentifier.Path) {
                         case GENERATED:
                             if (manager.GeneratedItemModels.Add(identifier))
-                                Debug.Log($"Marked item model {identifier} as generated (Direct)");
+                            {
+                                //Debug.Log($"Marked item model {identifier} as generated (Direct)");
+                            }
                             model = new(); // Return a placeholder model
                             break;
                         case ENTITY:
@@ -154,7 +162,9 @@ namespace MinecraftClient.Resource
 
                                 if (parentIsGenerated) // Also mark self as generated
                                     if (manager.GeneratedItemModels.Add(identifier))
-                                        Debug.Log($"Marked item model {identifier} as generated (Inherited)");
+                                    {
+                                        //Debug.Log($"Marked item model {identifier} as generated (Inherited)");
+                                    }
 
                                 if (parentModel == INVALID_MODEL)
                                     Debug.LogWarning($"Failed to load parent of {identifier}");

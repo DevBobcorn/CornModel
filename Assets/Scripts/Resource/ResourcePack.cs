@@ -161,9 +161,11 @@ namespace MinecraftClient.Resource
 
                                     // Get layer count of this item model
                                     int layerCount = model.Textures.Count;
+                                    var useItemCol = manager.TintableItemModels.Contains(identifier);
 
                                     model.Elements.AddRange(
-                                            manager.ItemModelLoader.GetGeneratedItemModelElements(layerCount, 16).ToArray());
+                                            manager.ItemModelLoader.GetGeneratedItemModelElements(
+                                                    layerCount, 16, useItemCol).ToArray());
                                 }
                                 
                                 count++;
@@ -179,7 +181,7 @@ namespace MinecraftClient.Resource
 
                 }
                 else
-                    Debug.LogWarning("Cannot find path " + assetsDir.FullName);
+                    Debug.LogWarning($"Cannot find path {assetsDir.FullName}");
 
             }
             else
@@ -259,6 +261,14 @@ namespace MinecraftClient.Resource
 
                         var itemModel = new ItemModel(itemGeometry, renderType);
                         // TODO Add geometry overrides into the item model
+
+                        if (ItemPalette.INSTANCE.IsTintable(numId))
+                        {
+                            // Mark this item model as tintable
+                            manager.TintableItemModels.Add(itemModelId);
+                            //Debug.Log($"Marked {itemModelId} as tintable");
+                            // TODO Also add its override models
+                        }
 
                         manager.ItemModelTable.Add(numId, itemModel);
                         count++;
