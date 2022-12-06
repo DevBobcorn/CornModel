@@ -266,13 +266,6 @@ public class Test : MonoBehaviour
         while (!itemLoadFlag.done)
             yield return wait;
 
-        // Load texture atlas... TODO (Will be decently implemented in future)
-        var atlasLoadFlag = new CoroutineFlag();
-        StartCoroutine(AtlasManager.Load(resourceVersion, atlasLoadFlag, loadStateInfo));
-
-        while (!atlasLoadFlag.done)
-            yield return wait;
-
         // Create a new resource pack manager...
         var packManager = new ResourcePackManager();
 
@@ -284,7 +277,7 @@ public class Test : MonoBehaviour
 
         // Load valid packs...
         var resLoadFlag = new CoroutineFlag();
-        StartCoroutine(packManager.LoadPacks(resLoadFlag, loadStateInfo));
+        StartCoroutine(packManager.LoadPacks(this, resLoadFlag, loadStateInfo));
 
         while (!resLoadFlag.done)
             yield return wait;
