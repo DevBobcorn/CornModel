@@ -139,7 +139,7 @@ public class Test : MonoBehaviour
             {
                 render.sharedMaterials =
                     new []{
-                        MaterialManager.GetAtlasMaterial(RenderType.TRANSLUCENT),
+                        MaterialManager.GetAtlasMaterial(RenderType.WATER),
                         MaterialManager.GetAtlasMaterial(stateModel.RenderType)
                     };
             }
