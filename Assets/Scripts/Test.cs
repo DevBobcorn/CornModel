@@ -248,7 +248,7 @@ public class Test : MonoBehaviour
     
     }
 
-    private IEnumerator DoBuild(string dataVersion, string resourceVersion)
+    private IEnumerator DoBuild(string dataVersion, string[] resourcePacks)
     {
         var wait = new WaitForSecondsRealtime(0.1F);
 
@@ -272,8 +272,11 @@ public class Test : MonoBehaviour
         // Load resources...
         packManager.ClearPacks();
 
-        ResourcePack pack = new ResourcePack($"vanilla-{resourceVersion}");
-        packManager.AddPack(pack);
+        for (int i = 0;i < resourcePacks.Length;i++)
+        {
+            ResourcePack pack = new(resourcePacks[i]);
+            packManager.AddPack(pack);
+        }
 
         // Load valid packs...
         var resLoadFlag = new CoroutineFlag();
@@ -331,7 +334,7 @@ public class Test : MonoBehaviour
 
     void Start()
     {
-        StartCoroutine(DoBuild("1.16", "1.16.5"));
+        StartCoroutine(DoBuild("1.16", new string[] { "vanilla-1.16.5", "VanillaBDcraft 128x MC116" }));
 
     }
 
