@@ -188,7 +188,7 @@ namespace MinecraftClient.Resource
                                             layerCount, GeneratedItemModelPrecision,
                                                     GeneratedItemModelThickness, tintable).ToArray());
                             
-                            Debug.Log($"Generating item model for {itemModelId} tintable: {tintable}");
+                            //Debug.Log($"Generating item model for {itemModelId} tintable: {tintable}");
                         }
 
                         var itemGeometry = new ItemGeometry(rawModel);
@@ -228,7 +228,7 @@ namespace MinecraftClient.Resource
                                                         layerCount, GeneratedItemModelPrecision,
                                                                 GeneratedItemModelThickness, tintable).ToArray());
                                         
-                                        Debug.Log($"Generating item model for {itemModelId} tintable: {tintable}");
+                                        //Debug.Log($"Generating item model for {itemModelId} tintable: {tintable}");
                                     }
 
                                     var overrideGeometry = new ItemGeometry(rawOverrideModel);
