@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -11,6 +10,7 @@ using MinecraftClient.Rendering;
 using MinecraftClient.Resource;
 using MinecraftClient.Mapping;
 using MinecraftClient.Inventory;
+using System.Collections.Generic;
 
 public class Test : MonoBehaviour
 {
@@ -154,101 +154,116 @@ public class Test : MonoBehaviour
 
     public void TestBuildItem(string name, int itemNumId, ItemStack itemStack, ItemModel itemModel, float3 pos)
     {
-        var modelObject = new GameObject(name);
-        modelObject.transform.parent = transform;
-        modelObject.transform.localPosition = pos;
+        Dictionary<ItemModelPredicate, ItemGeometry> buildDict = new();
 
-        var filter = modelObject.AddComponent<MeshFilter>();
-        var render = modelObject.AddComponent<MeshRenderer>();
+        // Gather all geometries of this model
+        buildDict.Add(ItemModelPredicate.EMPTY, itemModel.Geometry);
+        foreach (var pair in itemModel.Overrides)
+            buildDict.TryAdd(pair.Key, pair.Value);
 
-        var collider = modelObject.AddComponent<MeshCollider>();
-
-        // Make and set mesh...
-        var visualBuffer = new VertexBuffer();
-
-        int fluidVertexCount = visualBuffer.vert.Length;
-        int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
-
-        float3[] colors;
-
-        var tintFunc = ItemPalette.INSTANCE.GetTintRule(itemNumId);
-        if (tintFunc is null)
-            colors = new float3[]{ new(1F, 0F, 0F), new(0F, 0F, 1F), new(0F, 1F, 0F) };
-        else
-            colors = tintFunc.Invoke(itemStack);
-
-        itemModel.Geometry.Build(ref visualBuffer, float3.zero, colors);
-
-        int vertexCount = visualBuffer.vert.Length;
-        int triIdxCount = (vertexCount / 2) * 3;
-
-        var meshDataArr = Mesh.AllocateWritableMeshData(1);
-        var meshData = meshDataArr[0];
-
-        var vertAttrs = new NativeArray<VertexAttributeDescriptor>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-        vertAttrs[0] = new(VertexAttribute.Position,  dimension: 3, stream: 0);
-        vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 2, stream: 1);
-        vertAttrs[2] = new(VertexAttribute.Color,     dimension: 3, stream: 2);
-
-        // Set mesh params
-        meshData.SetVertexBufferParams(vertexCount, vertAttrs);
-        vertAttrs.Dispose();
-
-        meshData.SetIndexBufferParams(triIdxCount, IndexFormat.UInt32);
-
-        // Set vertex data
-        // Positions
-        var positions = meshData.GetVertexData<float3>(0);
-        positions.CopyFrom(visualBuffer.vert);
-        // Tex Coordinates
-        var texCoords = meshData.GetVertexData<float2>(1);
-        texCoords.CopyFrom(visualBuffer.txuv);
-        // Vertex colors
-        var vertColors = meshData.GetVertexData<float3>(2);
-        vertColors.CopyFrom(visualBuffer.tint);
-
-        // Set face data
-        var triIndices = meshData.GetIndexData<uint>();
-        uint vi = 0; int ti = 0;
-        for (;vi < vertexCount;vi += 4U, ti += 6)
+        int altitude = 0;
+        foreach (var pair in buildDict)
         {
-            triIndices[ti]     = vi;
-            triIndices[ti + 1] = vi + 3U;
-            triIndices[ti + 2] = vi + 2U;
-            triIndices[ti + 3] = vi;
-            triIndices[ti + 4] = vi + 1U;
-            triIndices[ti + 5] = vi + 3U;
+            var coord = pos + new int3(0, altitude, 0);
+
+            var modelObject = new GameObject(pair.Key == ItemModelPredicate.EMPTY ? name : $"{name}{pair.Key}");
+            modelObject.transform.parent = transform;
+            modelObject.transform.localPosition = coord;
+
+            var filter = modelObject.AddComponent<MeshFilter>();
+            var render = modelObject.AddComponent<MeshRenderer>();
+
+            var collider = modelObject.AddComponent<MeshCollider>();
+
+            // Make and set mesh...
+            var visualBuffer = new VertexBuffer();
+
+            int fluidVertexCount = visualBuffer.vert.Length;
+            int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
+
+            float3[] colors;
+
+            var tintFunc = ItemPalette.INSTANCE.GetTintRule(itemNumId);
+            if (tintFunc is null)
+                colors = new float3[]{ new(1F, 0F, 0F), new(0F, 0F, 1F), new(0F, 1F, 0F) };
+            else
+                colors = tintFunc.Invoke(itemStack);
+
+            pair.Value.Build(ref visualBuffer, float3.zero, colors);
+
+            int vertexCount = visualBuffer.vert.Length;
+            int triIdxCount = (vertexCount / 2) * 3;
+
+            var meshDataArr = Mesh.AllocateWritableMeshData(1);
+            var meshData = meshDataArr[0];
+
+            var vertAttrs = new NativeArray<VertexAttributeDescriptor>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            vertAttrs[0] = new(VertexAttribute.Position,  dimension: 3, stream: 0);
+            vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 2, stream: 1);
+            vertAttrs[2] = new(VertexAttribute.Color,     dimension: 3, stream: 2);
+
+            // Set mesh params
+            meshData.SetVertexBufferParams(vertexCount, vertAttrs);
+            vertAttrs.Dispose();
+
+            meshData.SetIndexBufferParams(triIdxCount, IndexFormat.UInt32);
+
+            // Set vertex data
+            // Positions
+            var positions = meshData.GetVertexData<float3>(0);
+            positions.CopyFrom(visualBuffer.vert);
+            // Tex Coordinates
+            var texCoords = meshData.GetVertexData<float2>(1);
+            texCoords.CopyFrom(visualBuffer.txuv);
+            // Vertex colors
+            var vertColors = meshData.GetVertexData<float3>(2);
+            vertColors.CopyFrom(visualBuffer.tint);
+
+            // Set face data
+            var triIndices = meshData.GetIndexData<uint>();
+            uint vi = 0; int ti = 0;
+            for (;vi < vertexCount;vi += 4U, ti += 6)
+            {
+                triIndices[ti]     = vi;
+                triIndices[ti + 1] = vi + 3U;
+                triIndices[ti + 2] = vi + 2U;
+                triIndices[ti + 3] = vi;
+                triIndices[ti + 4] = vi + 1U;
+                triIndices[ti + 5] = vi + 3U;
+            }
+
+            var bounds = new Bounds(new Vector3(0.5F, 0.5F, 0.5F), new Vector3(1F, 1F, 1F));
+
+            meshData.subMeshCount = 1;
+            meshData.SetSubMesh(0, new SubMeshDescriptor(0, triIdxCount)
+            {
+                bounds = bounds,
+                vertexCount = vertexCount
+            }, MeshUpdateFlags.DontRecalculateBounds);
+
+            var mesh = new Mesh
+            {
+                bounds = bounds,
+                name = "Proc Mesh"
+            };
+
+            Mesh.ApplyAndDisposeWritableMeshData(meshDataArr, mesh);
+
+            // Recalculate mesh normals
+            mesh.RecalculateNormals();
+
+            filter.sharedMesh   = mesh;
+            collider.sharedMesh = mesh;
+
+            render.sharedMaterial = MaterialManager.GetAtlasMaterial(itemModel.RenderType);
+
+            altitude += 2;
+
         }
-
-        var bounds = new Bounds(new Vector3(0.5F, 0.5F, 0.5F), new Vector3(1F, 1F, 1F));
-
-        meshData.subMeshCount = 1;
-        meshData.SetSubMesh(0, new SubMeshDescriptor(0, triIdxCount)
-        {
-            bounds = bounds,
-            vertexCount = vertexCount
-        }, MeshUpdateFlags.DontRecalculateBounds);
-
-        var mesh = new Mesh
-        {
-            bounds = bounds,
-            name = "Proc Mesh"
-        };
-
-        Mesh.ApplyAndDisposeWritableMeshData(meshDataArr, mesh);
-
-        // Recalculate mesh normals
-        mesh.RecalculateNormals();
-
-        filter.sharedMesh   = mesh;
-        collider.sharedMesh = mesh;
-
-        render.sharedMaterial = MaterialManager.GetAtlasMaterial(itemModel.RenderType);
-
     
     }
 
-    private IEnumerator DoBuild(string dataVersion, string[] resourcePacks)
+    private IEnumerator DoBuild(string dataVersion, string resourceVersion, string[] resourceOverrides, int itemPrecision)
     {
         var wait = new WaitForSecondsRealtime(0.1F);
 
@@ -272,11 +287,18 @@ public class Test : MonoBehaviour
         // Load resources...
         packManager.ClearPacks();
 
-        for (int i = 0;i < resourcePacks.Length;i++)
+        // First add base resources
+        ResourcePack basePack = new($"vanilla-{resourceVersion}");
+        packManager.AddPack(basePack);
+
+        // Then append overrides
+        for (int i = 0;i < resourceOverrides.Length;i++)
         {
-            ResourcePack pack = new(resourcePacks[i]);
-            packManager.AddPack(pack);
+            ResourcePack overridePack = new(resourceOverrides[i]);
+            packManager.AddPack(overridePack);
         }
+
+        packManager.GeneratedItemModelPrecision = itemPrecision;
 
         // Load valid packs...
         var resLoadFlag = new CoroutineFlag();
@@ -334,7 +356,11 @@ public class Test : MonoBehaviour
 
     void Start()
     {
-        StartCoroutine(DoBuild("1.16", new string[] { "vanilla-1.16.5", "VanillaBDcraft 128x MC116" }));
+        var overrides = new string[] {
+        //    "VanillaBDcraft 64x MC116"
+        };
+
+        StartCoroutine(DoBuild("1.16", "1.16.5", overrides, 16));
 
     }
 
