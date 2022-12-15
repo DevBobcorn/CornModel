@@ -7,8 +7,9 @@
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 
-# CornModel data
+# CornModel resources
 /[Rr]esource [Pp]acks/*/
+!/[Rr]esource [Pp]acks/vanilla_fix/
 
 # MemoryCaptures can get excessive in size.
 # They also could contain extremely sensitive data

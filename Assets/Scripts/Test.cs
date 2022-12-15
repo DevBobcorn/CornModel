@@ -331,7 +331,7 @@ public class Test : MonoBehaviour
                 break;
         }
 
-        count = 0;
+        count = 0; width = 32;
 
         foreach (var pair in packManager.ItemModelTable)
         {
@@ -357,6 +357,7 @@ public class Test : MonoBehaviour
     void Start()
     {
         var overrides = new string[] {
+            "vanilla_fix",
         //    "VanillaBDcraft 64x MC116"
         };
 
