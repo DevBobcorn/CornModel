@@ -39,6 +39,6 @@ namespace MinecraftClient.Inventory
 
         public int Damage { get; } = 0;
 
-        public override string ToString() => $"{Type.itemId} * {Count}";
+        public override string ToString() => $"{Type.ItemId} * {Count}";
     }
 }
