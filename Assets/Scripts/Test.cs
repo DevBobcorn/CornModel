@@ -62,7 +62,7 @@ public class Test : MonoBehaviour
 
             var vertAttrs = new NativeArray<VertexAttributeDescriptor>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             vertAttrs[0] = new(VertexAttribute.Position,  dimension: 3, stream: 0);
-            vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 2, stream: 1);
+            vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 3, stream: 1);
             vertAttrs[2] = new(VertexAttribute.Color,     dimension: 3, stream: 2);
 
             // Set mesh params
@@ -76,7 +76,7 @@ public class Test : MonoBehaviour
             var positions = meshData.GetVertexData<float3>(0);
             positions.CopyFrom(visualBuffer.vert);
             // Tex Coordinates
-            var texCoords = meshData.GetVertexData<float2>(1);
+            var texCoords = meshData.GetVertexData<float3>(1);
             texCoords.CopyFrom(visualBuffer.txuv);
             // Vertex colors
             var vertColors = meshData.GetVertexData<float3>(2);
@@ -199,7 +199,7 @@ public class Test : MonoBehaviour
 
             var vertAttrs = new NativeArray<VertexAttributeDescriptor>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             vertAttrs[0] = new(VertexAttribute.Position,  dimension: 3, stream: 0);
-            vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 2, stream: 1);
+            vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 3, stream: 1);
             vertAttrs[2] = new(VertexAttribute.Color,     dimension: 3, stream: 2);
 
             // Set mesh params
@@ -213,7 +213,7 @@ public class Test : MonoBehaviour
             var positions = meshData.GetVertexData<float3>(0);
             positions.CopyFrom(visualBuffer.vert);
             // Tex Coordinates
-            var texCoords = meshData.GetVertexData<float2>(1);
+            var texCoords = meshData.GetVertexData<float3>(1);
             texCoords.CopyFrom(visualBuffer.txuv);
             // Vertex colors
             var vertColors = meshData.GetVertexData<float3>(2);
