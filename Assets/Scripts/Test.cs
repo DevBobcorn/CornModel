@@ -268,44 +268,36 @@ public class Test : MonoBehaviour
         var wait = new WaitForSecondsRealtime(0.1F);
 
         // First load all possible Block States...
-        var blockLoadFlag = new CoroutineFlag();
-        StartCoroutine(BlockStatePalette.INSTANCE.PrepareData(dataVersion, blockLoadFlag, loadStateInfo));
+        var loadFlag = new DataLoadFlag();
+        StartCoroutine(BlockStatePalette.INSTANCE.PrepareData(dataVersion, loadFlag, loadStateInfo));
 
-        while (!blockLoadFlag.done)
+        while (!loadFlag.Finished)
             yield return wait;
         
         // Then load all Items...
-        var itemLoadFlag = new CoroutineFlag();
-        StartCoroutine(ItemPalette.INSTANCE.PrepareData(dataVersion, itemLoadFlag, loadStateInfo));
+        loadFlag.Finished = false;
+        StartCoroutine(ItemPalette.INSTANCE.PrepareData(dataVersion, loadFlag, loadStateInfo));
 
-        while (!itemLoadFlag.done)
+        while (!loadFlag.Finished)
             yield return wait;
 
         // Create a new resource pack manager...
         var packManager = new ResourcePackManager();
 
-        // Load resources...
+        // Load resource packs...
         packManager.ClearPacks();
-
         // First add base resources
         ResourcePack basePack = new($"vanilla-{resourceVersion}");
         packManager.AddPack(basePack);
-
         // Then append overrides
-        for (int i = 0;i < resourceOverrides.Length;i++)
-        {
-            ResourcePack overridePack = new(resourceOverrides[i]);
-            packManager.AddPack(overridePack);
-        }
-
-        packManager.GeneratedItemModelPrecision = itemPrecision;
-
+        foreach (var packName in resourceOverrides)
+            packManager.AddPack(new(packName));
         // Load valid packs...
-        var resLoadFlag = new CoroutineFlag();
-        StartCoroutine(packManager.LoadPacks(this, resLoadFlag, loadStateInfo));
+        loadFlag.Finished = false;
+        StartCoroutine(packManager.LoadPacks(this, loadFlag, loadStateInfo));
 
-        while (!resLoadFlag.done)
-            yield return wait;
+        while (!loadFlag.Finished)
+            yield return null;
 
         float startTime = Time.realtimeSinceStartup;
 

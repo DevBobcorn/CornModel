@@ -54,6 +54,7 @@ namespace MinecraftClient.Rendering
             blockMaterials.Add(RenderType.TRANSLUCENT, translucent);
 
             // Also add water as translucent
+            // TODO Sync with main project if necessary
             blockMaterials.Add(RenderType.WATER, translucent);
 
             initialized = true;
