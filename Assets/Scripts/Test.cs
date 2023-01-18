@@ -350,6 +350,7 @@ public class Test : MonoBehaviour
     {
         var overrides = new string[] {
             "vanilla_fix",
+            "classic_3d",
         //    "VanillaBDcraft 64x MC116"
         };
 
