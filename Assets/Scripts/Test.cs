@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Generic;
+
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Collections;
@@ -10,7 +12,8 @@ using MinecraftClient.Rendering;
 using MinecraftClient.Resource;
 using MinecraftClient.Mapping;
 using MinecraftClient.Inventory;
-using System.Collections.Generic;
+
+using MinecraftClient.Magic;
 
 public class Test : MonoBehaviour
 {
@@ -298,15 +301,15 @@ public class Test : MonoBehaviour
 
         while (!loadFlag.Finished)
             yield return null;
-
-        float startTime = Time.realtimeSinceStartup;
-
-        int start = 0, limit = 4096;
-        int count = 0, width = 64;
-
+        
         // Create a dummy world as provider of block colors
         var world = new World();
 
+        /*float startTime = Time.realtimeSinceStartup;
+
+        int start = 0, limit = 64;
+        int count = 0, width = 64;
+        
         foreach (var pair in packManager.StateModelTable)
         {
             int index = count - start;
@@ -343,14 +346,54 @@ public class Test : MonoBehaviour
 
         }
 
-        loadStateInfo.infoText = $"Voxel meshes built in {Time.realtimeSinceStartup - startTime} seconds.";
+        loadStateInfo.infoText = $"Voxel meshes built in {Time.realtimeSinceStartup - startTime} seconds.";*/
+
+        var particlesObj = new GameObject("Particles Visualized");
+        particlesObj.transform.SetParent(transform);
+        particlesObj.transform.localPosition = float3.zero;
+
+        var testStateIds = new int[] {
+            1,    // minecraft:stone
+            9,    // minecraft:grass_block[snowy:false]
+            3460, // minecraft:birch_sign[rotation=7,waterlogged=false]
+            3647, // minecraft:rail[shape=ascending_east]
+            3796, // minecraft:lever[face=wall,facing=west,powered=false]
+            3959, // minecraft:sugar_cane[age=11]
+        };
+
+        int cc = 0;
+
+        var atlasArray = AtlasManager.GetAtlasArray(RenderType.CUTOUT);
+
+        var atlasData = new Color32[atlasArray.depth][];
+
+        for (int ti = 0;ti < atlasArray.depth;ti++)
+            atlasData[ti] = atlasArray.GetPixels32(ti);
+        
+        // Make and set mesh...
+        var buffer = new VertexBuffer();
+
+        foreach (var testStateId in testStateIds)
+        {
+            var testState = BlockStatePalette.INSTANCE.StatesTable[testStateId];
+
+            var testGeometry = packManager.StateModelTable[testStateId].Geometries[0];
+            var testTint = BlockStatePalette.INSTANCE.GetBlockColor(testStateId, world, new Location(), testState);
+
+            testGeometry.Build(ref buffer, new(0, 0, cc * 2F), 0b111111, testTint);
+            
+            cc += 1;
+        }
+
+        ParticleVoxelGenerator.Generate(particlesObj.transform, atlasData, buffer);
+
     }
 
     void Start()
     {
         var overrides = new string[] {
             "vanilla_fix",
-            "classic_3d",
+        //    "classic_3d",
         //    "VanillaBDcraft 64x MC116"
         };
 
