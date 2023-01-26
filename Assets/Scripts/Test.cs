@@ -305,9 +305,9 @@ public class Test : MonoBehaviour
         // Create a dummy world as provider of block colors
         var world = new World();
 
-        /*float startTime = Time.realtimeSinceStartup;
+        float startTime = Time.realtimeSinceStartup;
 
-        int start = 0, limit = 64;
+        int start = 0, limit = 4096;
         int count = 0, width = 64;
         
         foreach (var pair in packManager.StateModelTable)
@@ -346,8 +346,9 @@ public class Test : MonoBehaviour
 
         }
 
-        loadStateInfo.infoText = $"Voxel meshes built in {Time.realtimeSinceStartup - startTime} seconds.";*/
+        loadStateInfo.infoText = $"Voxel meshes built in {Time.realtimeSinceStartup - startTime} seconds.";
 
+        /*
         var particlesObj = new GameObject("Particles Visualized");
         particlesObj.transform.SetParent(transform);
         particlesObj.transform.localPosition = float3.zero;
@@ -386,6 +387,7 @@ public class Test : MonoBehaviour
         }
 
         ParticleVoxelGenerator.Generate(particlesObj.transform, atlasData, buffer);
+        */
 
     }
 
