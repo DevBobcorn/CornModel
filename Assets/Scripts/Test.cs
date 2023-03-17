@@ -13,14 +13,10 @@ using MinecraftClient.Resource;
 using MinecraftClient.Mapping;
 using MinecraftClient.Inventory;
 
-using MinecraftClient.Magic;
-
 public class Test : MonoBehaviour
 {
-    private static readonly ResourceLocation WATER_STILL = new("block/water_still");
-    private static readonly ResourceLocation LAVA_STILL  = new("block/lava_still");
-    
     private static readonly Color32 TINT_COLOR = new(255, 255, 255, 255);
+    private static readonly byte[] FLUID_HEIGHTS = new byte[] { 15, 15, 15, 15, 15, 15, 15, 15, 15 };
 
     private readonly LoadStateInfo loadStateInfo = new();
 
@@ -47,9 +43,11 @@ public class Test : MonoBehaviour
             var visualBuffer = new VertexBuffer();
 
             if (state.InWater)
-                FluidGeometry.Build(ref visualBuffer, WATER_STILL, 0, 0, 0, cullFlags, world.GetWaterColor(loc));
+                FluidGeometry.Build(ref visualBuffer, FluidGeometry.LiquidTextures[0], 0, 0, 0, FLUID_HEIGHTS,
+                        cullFlags, world.GetWaterColor(loc));
             else if (state.InLava)
-                FluidGeometry.Build(ref visualBuffer, LAVA_STILL,  0, 0, 0, cullFlags, BlockGeometry.DEFAULT_COLOR);
+                FluidGeometry.Build(ref visualBuffer, FluidGeometry.LiquidTextures[1],  0, 0, 0, FLUID_HEIGHTS,
+                        cullFlags, BlockGeometry.DEFAULT_COLOR);
 
             int fluidVertexCount = visualBuffer.vert.Length;
             int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
