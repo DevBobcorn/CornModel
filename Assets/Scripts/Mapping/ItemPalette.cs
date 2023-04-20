@@ -67,7 +67,7 @@ namespace MinecraftClient.Mapping
 
             if (!File.Exists(itemsPath) || !File.Exists(listsPath) || !File.Exists(colorsPath))
             {
-                loadStateInfo.infoText = "Item data not complete!";
+                loadStateInfo.InfoText = "Item data not complete!";
                 flag.Finished = true;
                 flag.Failed = true;
                 yield break;
@@ -82,7 +82,7 @@ namespace MinecraftClient.Mapping
             lists.Add("epic", new());
 
             Json.JSONData spLists = Json.ParseJson(File.ReadAllText(listsPath, Encoding.UTF8));
-            loadStateInfo.infoText = $"Reading special lists from {listsPath}";
+            loadStateInfo.InfoText = $"Reading special lists from {listsPath}";
 
             int count = 0, yieldCount = 200;
 
@@ -170,7 +170,7 @@ namespace MinecraftClient.Mapping
 
             // Load item color rules...
             itemColorRules.Clear();
-            loadStateInfo.infoText = $"Loading item color rules";
+            loadStateInfo.InfoText = $"Loading item color rules";
             yield return null;
 
             Json.JSONData colorRules = Json.ParseJson(File.ReadAllText(colorsPath, Encoding.UTF8));

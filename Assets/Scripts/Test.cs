@@ -12,6 +12,7 @@ using MinecraftClient.Rendering;
 using MinecraftClient.Resource;
 using MinecraftClient.Mapping;
 using MinecraftClient.Inventory;
+using System.Threading.Tasks;
 
 public class Test : MonoBehaviour
 {
@@ -21,6 +22,13 @@ public class Test : MonoBehaviour
     private readonly LoadStateInfo loadStateInfo = new();
 
     public TMP_Text infoText;
+
+    // Runs before a scene gets loaded
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    public static void InitializeApp()
+    {
+        Loom.Initialize();
+    }
 
     public void TestBuildState(string name, int stateId, BlockState state, BlockStateModel stateModel, int cullFlags, World world, float3 pos)
     {
@@ -270,7 +278,13 @@ public class Test : MonoBehaviour
 
         // First load all possible Block States...
         var loadFlag = new DataLoadFlag();
-        StartCoroutine(BlockStatePalette.INSTANCE.PrepareData(dataVersion, loadFlag, loadStateInfo));
+
+        Task.Run(() => {
+            BlockStatePalette.INSTANCE.PrepareData(dataVersion, loadFlag, loadStateInfo);
+        });
+
+        while (!loadFlag.Finished)
+            yield return null;
 
         while (!loadFlag.Finished)
             yield return wait;
@@ -295,7 +309,10 @@ public class Test : MonoBehaviour
             packManager.AddPack(new(packName));
         // Load valid packs...
         loadFlag.Finished = false;
-        StartCoroutine(packManager.LoadPacks(this, loadFlag, loadStateInfo));
+
+        var packTask = Task.Run(() => {
+            packManager.LoadPacks(loadFlag, loadStateInfo);
+        });
 
         while (!loadFlag.Finished)
             yield return null;
@@ -344,48 +361,7 @@ public class Test : MonoBehaviour
 
         }
 
-        loadStateInfo.infoText = $"Voxel meshes built in {Time.realtimeSinceStartup - startTime} seconds.";
-
-        /*
-        var particlesObj = new GameObject("Particles Visualized");
-        particlesObj.transform.SetParent(transform);
-        particlesObj.transform.localPosition = float3.zero;
-
-        var testStateIds = new int[] {
-            1,    // minecraft:stone
-            9,    // minecraft:grass_block[snowy:false]
-            3460, // minecraft:birch_sign[rotation=7,waterlogged=false]
-            3647, // minecraft:rail[shape=ascending_east]
-            3796, // minecraft:lever[face=wall,facing=west,powered=false]
-            3959, // minecraft:sugar_cane[age=11]
-        };
-
-        int cc = 0;
-
-        var atlasArray = AtlasManager.GetAtlasArray(RenderType.CUTOUT);
-
-        var atlasData = new Color32[atlasArray.depth][];
-
-        for (int ti = 0;ti < atlasArray.depth;ti++)
-            atlasData[ti] = atlasArray.GetPixels32(ti);
-        
-        // Make and set mesh...
-        var buffer = new VertexBuffer();
-
-        foreach (var testStateId in testStateIds)
-        {
-            var testState = BlockStatePalette.INSTANCE.StatesTable[testStateId];
-
-            var testGeometry = packManager.StateModelTable[testStateId].Geometries[0];
-            var testTint = BlockStatePalette.INSTANCE.GetBlockColor(testStateId, world, new Location(), testState);
-
-            testGeometry.Build(ref buffer, new(0, 0, cc * 2F), 0b111111, testTint);
-            
-            cc += 1;
-        }
-
-        ParticleVoxelGenerator.Generate(particlesObj.transform, atlasData, buffer);
-        */
+        loadStateInfo.InfoText = $"Voxel meshes built in {Time.realtimeSinceStartup - startTime} seconds.";
 
     }
 
@@ -405,8 +381,8 @@ public class Test : MonoBehaviour
     {
         if (infoText is not null)
         {
-            if (infoText.text != loadStateInfo.infoText)
-                infoText.text = loadStateInfo.infoText;
+            if (infoText.text != loadStateInfo.InfoText)
+                infoText.text = loadStateInfo.InfoText;
 
         }
 
