@@ -54,7 +54,7 @@ namespace MinecraftClient.Mapping
             return null;
         }
 
-        public IEnumerator PrepareData(string dataVersion, DataLoadFlag flag, LoadStateInfo loadStateInfo)
+        public void PrepareData(string dataVersion, DataLoadFlag flag, LoadStateInfo loadStateInfo)
         {
             // Clear loaded stuff...
             itemsTable.Clear();
@@ -70,7 +70,7 @@ namespace MinecraftClient.Mapping
                 loadStateInfo.InfoText = "Item data not complete!";
                 flag.Finished = true;
                 flag.Failed = true;
-                yield break;
+                return;
             }
 
             // First read special item lists...
@@ -84,19 +84,12 @@ namespace MinecraftClient.Mapping
             Json.JSONData spLists = Json.ParseJson(File.ReadAllText(listsPath, Encoding.UTF8));
             loadStateInfo.InfoText = $"Reading special lists from {listsPath}";
 
-            int count = 0, yieldCount = 200;
-
             foreach (var pair in lists)
             {
                 if (spLists.Properties.ContainsKey(pair.Key))
                 {
                     foreach (var block in spLists.Properties[pair.Key].DataArray)
-                    {
                         pair.Value.Add(ResourceLocation.fromString(block.StringValue));
-                        count++;
-                        if (count % yieldCount == 0)
-                            yield return null;
-                    }
                 }
             }
 
@@ -143,14 +136,8 @@ namespace MinecraftClient.Mapping
                         itemsTable.TryAdd(numId, newItem);
                         //UnityEngine.Debug.Log($"Loading item {numId} {item.Value.StringValue}");
                     }
-
-                    count++;
-                    if (count % yieldCount == 0)
-                        yield return null;
                 }
             }
-
-            yield return null;
 
             // Index reverse mappings for use in ToId()
             foreach (KeyValuePair<int, Item> entry in itemsTable)
@@ -166,12 +153,9 @@ namespace MinecraftClient.Mapping
             dictReverse[Item.NULL] = -1;
             dictId[Item.NULL.ItemId] = -1;
 
-            yield return null;
-
             // Load item color rules...
             itemColorRules.Clear();
             loadStateInfo.InfoText = $"Loading item color rules";
-            yield return null;
 
             Json.JSONData colorRules = Json.ParseJson(File.ReadAllText(colorsPath, Encoding.UTF8));
 
@@ -190,9 +174,6 @@ namespace MinecraftClient.Mapping
 
                         if (!itemColorRules.TryAdd(numId, ruleFunc))
                             Debug.LogWarning($"Failed to apply fixed color rules to {itemId} ({numId})!");
-                        count++;
-                        if (count % yieldCount == 0)
-                            yield return null;
                         
                     }
                     else
@@ -220,9 +201,6 @@ namespace MinecraftClient.Mapping
 
                         if (!itemColorRules.TryAdd(numId, ruleFunc))
                             Debug.LogWarning($"Failed to apply fixed multi-color rules to {itemId} ({numId})!");
-                        count++;
-                        if (count % yieldCount == 0)
-                            yield return null;
                         
                     }
                     else

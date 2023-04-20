@@ -274,27 +274,19 @@ public class Test : MonoBehaviour
 
     private IEnumerator DoBuild(string dataVersion, string resourceVersion, string[] resourceOverrides, int itemPrecision)
     {
-        var wait = new WaitForSecondsRealtime(0.1F);
-
         // First load all possible Block States...
         var loadFlag = new DataLoadFlag();
-
-        Task.Run(() => {
-            BlockStatePalette.INSTANCE.PrepareData(dataVersion, loadFlag, loadStateInfo);
-        });
+        Task.Run(() => BlockStatePalette.INSTANCE.PrepareData(dataVersion, loadFlag, loadStateInfo));
 
         while (!loadFlag.Finished)
             yield return null;
 
-        while (!loadFlag.Finished)
-            yield return wait;
-        
         // Then load all Items...
         loadFlag.Finished = false;
-        StartCoroutine(ItemPalette.INSTANCE.PrepareData(dataVersion, loadFlag, loadStateInfo));
+        Task.Run(() => ItemPalette.INSTANCE.PrepareData(dataVersion, loadFlag, loadStateInfo));
 
         while (!loadFlag.Finished)
-            yield return wait;
+            yield return null;
 
         // Create a new resource pack manager...
         var packManager = new ResourcePackManager();
