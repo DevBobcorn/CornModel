@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -15,15 +14,16 @@ namespace MinecraftClient.Mapping
     {
         public static readonly ItemPalette INSTANCE = new();
 
-        private readonly Dictionary<int, Item> itemsTable = new Dictionary<int, Item>();
+        private readonly Dictionary<int, Item> itemsTable = new();
         public Dictionary<int, Item> ItemsTable { get { return itemsTable; } }
 
-        private readonly Dictionary<Item, int> dictReverse = new Dictionary<Item, int>();
-        private readonly Dictionary<ResourceLocation, int> dictId = new Dictionary<ResourceLocation, int>();
-
+        private readonly Dictionary<ResourceLocation, int> dictId = new();
         private readonly Dictionary<int, Func<ItemStack, float3[]>> itemColorRules = new();
 
-        public Item FromId(int id)
+        /// <summary>
+        /// Get item from numeral id
+        /// </summary>
+        public Item FromNumId(int id)
         {
             // Unknown item types may appear on Forge servers for custom items
             if (!itemsTable.ContainsKey(id))
@@ -32,14 +32,23 @@ namespace MinecraftClient.Mapping
             return itemsTable[id];
         }
 
-        public int ToNumId(Item itemType)
-        {
-            return dictReverse[itemType];
-        }
-
+        /// <summary>
+        /// Get numeral id from item identifier
+        /// </summary>
         public int ToNumId(ResourceLocation identifier)
         {
-            return dictId[identifier];
+            if (dictId.ContainsKey(identifier))
+                return dictId[identifier];
+            
+            throw new System.IO.InvalidDataException($"Unknown Item {identifier}");
+        }
+
+        /// <summary>
+        /// Get item from item identifier
+        /// </summary>
+        public Item FromId(ResourceLocation identifier)
+        {
+            return FromNumId(ToNumId(identifier));
         }
 
         public bool IsTintable(int itemNumId)
@@ -54,11 +63,10 @@ namespace MinecraftClient.Mapping
             return null;
         }
 
-        public void PrepareData(string dataVersion, DataLoadFlag flag, LoadStateInfo loadStateInfo)
+        public void PrepareData(string dataVersion, DataLoadFlag flag)
         {
             // Clear loaded stuff...
             itemsTable.Clear();
-            dictReverse.Clear();
             dictId.Clear();
 
             string itemsPath = PathHelper.GetExtraDataFile($"items-{dataVersion}.json");
@@ -67,7 +75,7 @@ namespace MinecraftClient.Mapping
 
             if (!File.Exists(itemsPath) || !File.Exists(listsPath) || !File.Exists(colorsPath))
             {
-                loadStateInfo.InfoText = "Item data not complete!";
+                Debug.LogWarning("Item data not complete!");
                 flag.Finished = true;
                 flag.Failed = true;
                 return;
@@ -82,8 +90,6 @@ namespace MinecraftClient.Mapping
             lists.Add("epic", new());
 
             Json.JSONData spLists = Json.ParseJson(File.ReadAllText(listsPath, Encoding.UTF8));
-            loadStateInfo.InfoText = $"Reading special lists from {listsPath}";
-
             foreach (var pair in lists)
             {
                 if (spLists.Properties.ContainsKey(pair.Key))
@@ -134,29 +140,18 @@ namespace MinecraftClient.Mapping
                         };
 
                         itemsTable.TryAdd(numId, newItem);
+                        dictId.TryAdd(itemId, numId);
                         //UnityEngine.Debug.Log($"Loading item {numId} {item.Value.StringValue}");
                     }
                 }
             }
 
-            // Index reverse mappings for use in ToId()
-            foreach (KeyValuePair<int, Item> entry in itemsTable)
-            {
-                dictReverse.Add(entry.Value, entry.Key);
-                dictId.Add(entry.Value.ItemId, entry.Key);
-            }
-
             // Hardcoded placeholder types for internal and network use
-            dictReverse[Item.UNKNOWN] = -2;
             dictId[Item.UNKNOWN.ItemId] = -2;
-
-            dictReverse[Item.NULL] = -1;
             dictId[Item.NULL.ItemId] = -1;
 
             // Load item color rules...
             itemColorRules.Clear();
-            loadStateInfo.InfoText = $"Loading item color rules";
-
             Json.JSONData colorRules = Json.ParseJson(File.ReadAllText(colorsPath, Encoding.UTF8));
 
             if (colorRules.Properties.ContainsKey("fixed"))

@@ -276,17 +276,13 @@ public class Test : MonoBehaviour
     {
         // First load all possible Block States...
         var loadFlag = new DataLoadFlag();
-        Task.Run(() => BlockStatePalette.INSTANCE.PrepareData(dataVersion, loadFlag, loadStateInfo));
-
-        while (!loadFlag.Finished)
-            yield return null;
+        Task.Run(() => BlockStatePalette.INSTANCE.PrepareData(dataVersion, loadFlag));
+        while (!loadFlag.Finished) yield return null;
 
         // Then load all Items...
         loadFlag.Finished = false;
-        Task.Run(() => ItemPalette.INSTANCE.PrepareData(dataVersion, loadFlag, loadStateInfo));
-
-        while (!loadFlag.Finished)
-            yield return null;
+        Task.Run(() => ItemPalette.INSTANCE.PrepareData(dataVersion, loadFlag));
+        while (!loadFlag.Finished) yield return null;
 
         // Create a new resource pack manager...
         var packManager = new ResourcePackManager();
@@ -301,13 +297,8 @@ public class Test : MonoBehaviour
             packManager.AddPack(new(packName));
         // Load valid packs...
         loadFlag.Finished = false;
-
-        var packTask = Task.Run(() => {
-            packManager.LoadPacks(loadFlag, loadStateInfo);
-        });
-
-        while (!loadFlag.Finished)
-            yield return null;
+        Task.Run(() => packManager.LoadPacks(loadFlag, loadStateInfo));
+        while (!loadFlag.Finished) yield return null;
         
         // Create a dummy world as provider of block colors
         var world = new World();
