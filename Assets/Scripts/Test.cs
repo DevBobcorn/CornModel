@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -12,7 +14,6 @@ using MinecraftClient.Rendering;
 using MinecraftClient.Resource;
 using MinecraftClient.Mapping;
 using MinecraftClient.Inventory;
-using System.Threading.Tasks;
 
 public class Test : MonoBehaviour
 {
@@ -20,6 +21,7 @@ public class Test : MonoBehaviour
     private static readonly byte[] FLUID_HEIGHTS = new byte[] { 15, 15, 15, 15, 15, 15, 15, 15, 15 };
 
     private readonly LoadStateInfo loadStateInfo = new();
+    private bool building = false;
 
     public TMP_Text infoText;
 
@@ -274,6 +276,8 @@ public class Test : MonoBehaviour
 
     private IEnumerator DoBuild(string dataVersion, string resourceVersion, string[] resourceOverrides, int itemPrecision)
     {
+        building = false;
+
         // First load all possible Block States...
         var loadFlag = new DataLoadFlag();
         Task.Run(() => BlockStatePalette.INSTANCE.PrepareData(dataVersion, loadFlag));
@@ -344,29 +348,39 @@ public class Test : MonoBehaviour
 
         }
 
-        loadStateInfo.InfoText = $"Voxel meshes built in {Time.realtimeSinceStartup - startTime} seconds.";
+        building = false;
 
+        infoText.text = $"Voxel meshes built in {Time.realtimeSinceStartup - startTime} seconds.";
     }
 
     void Start()
     {
-        var overrides = new string[] {
-            "vanilla_fix",
-        //    "classic_3d",
-        //    "VanillaBDcraft 64x MC116"
-        };
+        var overrides = new string[] { "vanilla_fix" };
+        string resVersion = "1.16.5", dataVersion = "1.16.5";
 
-        StartCoroutine(DoBuild("1.16", "1.16.5", overrides, 16));
+        if (!Directory.Exists(PathHelper.GetPackDirectoryNamed($"vanilla-{resVersion}"))) // Prepare resources first
+        {
+            Debug.Log($"Resources for {resVersion} not present. Downloading...");
+
+            StartCoroutine(ResourceDownloader.DownloadResource(resVersion, infoText, () => { },
+                    (succeeded) => {
+                        if (succeeded) // Resources ready, do build
+                            StartCoroutine(DoBuild(dataVersion, resVersion, overrides, 16));
+                        else // Failed to download resources
+                            infoText.text = $"Failed to download resources for {resVersion}.";
+                    }));
+        }
+        else // Resources ready, do build
+            StartCoroutine(DoBuild(dataVersion, resVersion, overrides, 16));
 
     }
 
     void Update()
     {
-        if (infoText is not null)
+        if (building && infoText is not null)
         {
             if (infoText.text != loadStateInfo.InfoText)
                 infoText.text = loadStateInfo.InfoText;
-
         }
 
     }
