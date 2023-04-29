@@ -20,9 +20,6 @@ public class Test : MonoBehaviour
     private static readonly Color32 TINT_COLOR = new(255, 255, 255, 255);
     private static readonly byte[] FLUID_HEIGHTS = new byte[] { 15, 15, 15, 15, 15, 15, 15, 15, 15 };
 
-    private readonly LoadStateInfo loadStateInfo = new();
-    private bool building = false;
-
     public TMP_Text infoText;
 
     // Runs before a scene gets loaded
@@ -276,8 +273,6 @@ public class Test : MonoBehaviour
 
     private IEnumerator DoBuild(string dataVersion, string resourceVersion, string[] resourceOverrides, int itemPrecision)
     {
-        building = false;
-
         // First load all possible Block States...
         var loadFlag = new DataLoadFlag();
         Task.Run(() => BlockStatePalette.INSTANCE.PrepareData(dataVersion, loadFlag));
@@ -301,7 +296,8 @@ public class Test : MonoBehaviour
             packManager.AddPack(new(packName));
         // Load valid packs...
         loadFlag.Finished = false;
-        Task.Run(() => packManager.LoadPacks(loadFlag, loadStateInfo));
+        Task.Run(() => packManager.LoadPacks(loadFlag,
+                (status) => Loom.QueueOnMainThread(() => infoText.text = status)));
         while (!loadFlag.Finished) yield return null;
         
         // Create a dummy world as provider of block colors
@@ -348,8 +344,6 @@ public class Test : MonoBehaviour
 
         }
 
-        building = false;
-
         infoText.text = $"Voxel meshes built in {Time.realtimeSinceStartup - startTime} seconds.";
     }
 
@@ -362,7 +356,8 @@ public class Test : MonoBehaviour
         {
             Debug.Log($"Resources for {resVersion} not present. Downloading...");
 
-            StartCoroutine(ResourceDownloader.DownloadResource(resVersion, infoText, () => { },
+            StartCoroutine(ResourceDownloader.DownloadResource(resVersion,
+                    (status) => Loom.QueueOnMainThread(() => infoText.text = status), () => { },
                     (succeeded) => {
                         if (succeeded) // Resources ready, do build
                             StartCoroutine(DoBuild(dataVersion, resVersion, overrides, 16));
@@ -372,16 +367,6 @@ public class Test : MonoBehaviour
         }
         else // Resources ready, do build
             StartCoroutine(DoBuild(dataVersion, resVersion, overrides, 16));
-
-    }
-
-    void Update()
-    {
-        if (building && infoText is not null)
-        {
-            if (infoText.text != loadStateInfo.InfoText)
-                infoText.text = loadStateInfo.InfoText;
-        }
 
     }
 
