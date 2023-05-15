@@ -20,14 +20,12 @@ public class Test : MonoBehaviour
     private static readonly Color32 TINT_COLOR = new(255, 255, 255, 255);
     private static readonly byte[] FLUID_HEIGHTS = new byte[] { 15, 15, 15, 15, 15, 15, 15, 15, 15 };
 
-    public TMP_Text infoText;
+    [SerializeField] public TMP_Text InfoText;
+    [SerializeField] public MaterialManager MaterialManager;
 
     // Runs before a scene gets loaded
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-    public static void InitializeApp()
-    {
-        Loom.Initialize();
-    }
+    public static void InitializeApp() => Loom.Initialize();
 
     public void TestBuildState(string name, int stateId, BlockState state, BlockStateModel stateModel, int cullFlags, World world, float3 pos)
     {
@@ -283,8 +281,8 @@ public class Test : MonoBehaviour
         Task.Run(() => ItemPalette.INSTANCE.PrepareData(dataVersion, loadFlag));
         while (!loadFlag.Finished) yield return null;
 
-        // Create a new resource pack manager...
-        var packManager = new ResourcePackManager();
+        // Get resource pack manager...
+        var packManager = ResourcePackManager.Instance;
 
         // Load resource packs...
         packManager.ClearPacks();
@@ -297,7 +295,7 @@ public class Test : MonoBehaviour
         // Load valid packs...
         loadFlag.Finished = false;
         Task.Run(() => packManager.LoadPacks(loadFlag,
-                (status) => Loom.QueueOnMainThread(() => infoText.text = status)));
+                (status) => Loom.QueueOnMainThread(() => InfoText.text = status)));
         while (!loadFlag.Finished) yield return null;
         
         // Create a dummy world as provider of block colors
@@ -344,7 +342,7 @@ public class Test : MonoBehaviour
 
         }
 
-        infoText.text = $"Voxel meshes built in {Time.realtimeSinceStartup - startTime} seconds.";
+        InfoText.text = $"Voxel meshes built in {Time.realtimeSinceStartup - startTime} seconds.";
     }
 
     void Start()
@@ -357,12 +355,12 @@ public class Test : MonoBehaviour
             Debug.Log($"Resources for {resVersion} not present. Downloading...");
 
             StartCoroutine(ResourceDownloader.DownloadResource(resVersion,
-                    (status) => Loom.QueueOnMainThread(() => infoText.text = status), () => { },
+                    (status) => Loom.QueueOnMainThread(() => InfoText.text = status), () => { },
                     (succeeded) => {
                         if (succeeded) // Resources ready, do build
                             StartCoroutine(DoBuild(dataVersion, resVersion, overrides, 16));
                         else // Failed to download resources
-                            infoText.text = $"Failed to download resources for {resVersion}.";
+                            InfoText.text = $"Failed to download resources for {resVersion}.";
                     }));
         }
         else // Resources ready, do build
