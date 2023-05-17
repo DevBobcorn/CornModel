@@ -45,13 +45,13 @@ public class Test : MonoBehaviour
             var collider = modelObject.AddComponent<MeshCollider>();
 
             // Make and set mesh...
-            var visualBuffer = new VertexBuffer();
+            var visualBuffer = (vert: new float3[0], txuv: new float3[0], tint: new float3[0]);
 
             if (state.InWater)
                 FluidGeometry.Build(ref visualBuffer, FluidGeometry.LiquidTextures[0], 0, 0, 0, FLUID_HEIGHTS,
                         cullFlags, world.GetWaterColor(loc));
             else if (state.InLava)
-                FluidGeometry.Build(ref visualBuffer, FluidGeometry.LiquidTextures[1],  0, 0, 0, FLUID_HEIGHTS,
+                FluidGeometry.Build(ref visualBuffer, FluidGeometry.LiquidTextures[1], 0, 0, 0, FLUID_HEIGHTS,
                         cullFlags, BlockGeometry.DEFAULT_COLOR);
 
             int fluidVertexCount = visualBuffer.vert.Length;
@@ -182,7 +182,7 @@ public class Test : MonoBehaviour
             var collider = modelObject.AddComponent<MeshCollider>();
 
             // Make and set mesh...
-            var visualBuffer = new VertexBuffer();
+            var visualBuffer = (vert: new float3[0], txuv: new float3[0], tint: new float3[0]);
 
             int fluidVertexCount = visualBuffer.vert.Length;
             int fluidTriIdxCount = (fluidVertexCount / 2) * 3;

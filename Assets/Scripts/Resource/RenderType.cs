@@ -1,4 +1,4 @@
-namespace MinecraftClient.Rendering
+namespace MinecraftClient.Resource
 {
     public enum RenderType {
         SOLID,
