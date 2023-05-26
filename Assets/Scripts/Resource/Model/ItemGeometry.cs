@@ -17,7 +17,7 @@ namespace MinecraftClient.Resource
             this.isGenerated = isGenerated;
         }
 
-        public void Build(ref (float3[] vert, float3[] txuv, float3[] tint) buffer, float3 posOffset, float3[] itemTints)
+        public void Build(ref VertexBuffer buffer, float3 posOffset, float3[] itemTints)
         {
             int vertexCount = buffer.vert.Length + vertexArr.Length;
 

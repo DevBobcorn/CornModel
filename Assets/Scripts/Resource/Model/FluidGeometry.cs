@@ -31,7 +31,7 @@ namespace MinecraftClient.Resource
             return (h1 + h2 + h3 + h4) / 16F / cnt;
         }
 
-        public static void Build(ref (float3[] vert, float3[] txuv, float3[] tint) buffer, ResourceLocation liquid,
+        public static void Build(ref VertexBuffer buffer, ResourceLocation liquid,
                 int x, int y, int z, byte[] heights, int cullFlags, float3 fluidColor)
         {
             // Unity                   Minecraft            Top Quad Vertices     Height References

@@ -51,7 +51,7 @@ namespace MinecraftClient.Resource
             return vertexCount;
         }
 
-        public void Build(ref (float3[] vert, float3[] txuv, float3[] tint) buffer, float3 posOffset, int cullFlags, float3 blockTint)
+        public void Build(ref VertexBuffer buffer, float3 posOffset, int cullFlags, float3 blockTint)
         {
             // Compute value if absent
             int vertexCount = buffer.vert.Length + ((sizeCache.ContainsKey(cullFlags)) ? sizeCache[cullFlags] : (sizeCache[cullFlags] = CalculateArraySize(cullFlags)));
@@ -149,7 +149,7 @@ namespace MinecraftClient.Resource
 
         }
 
-        public void BuildWithCollider(ref (float3[] vert, float3[] txuv, float3[] tint) buffer,
+        public void BuildWithCollider(ref VertexBuffer buffer,
                 ref float3[] colliderVerts, float3 posOffset, int cullFlags, float3 blockTint)
         {
             // Compute value if absent
