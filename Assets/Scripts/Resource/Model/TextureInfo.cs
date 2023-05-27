@@ -6,13 +6,18 @@ namespace MinecraftClient.Resource
     {
         public Rect bounds;
         public int index;
-        public bool animatable;
 
-        public TextureInfo(Rect bounds, int index, bool animatable)
+        // More than 1 if the texture is animated
+        public int frameCount;
+        // Duration of each frame
+        public float frameInterval;
+
+        public TextureInfo(Rect bounds, int index, int fc = 1, float fi = 1)
         {
             this.bounds = bounds;
             this.index = index;
-            this.animatable = animatable;
+            this.frameCount = fc;
+            this.frameInterval = fi;
         }
     }
 }

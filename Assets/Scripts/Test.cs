@@ -66,10 +66,11 @@ public class Test : MonoBehaviour
             var meshDataArr = Mesh.AllocateWritableMeshData(1);
             var meshData = meshDataArr[0];
 
-            var vertAttrs = new NativeArray<VertexAttributeDescriptor>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            var vertAttrs = new NativeArray<VertexAttributeDescriptor>(4, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             vertAttrs[0] = new(VertexAttribute.Position,  dimension: 3, stream: 0);
             vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 3, stream: 1);
-            vertAttrs[2] = new(VertexAttribute.Color,     dimension: 3, stream: 2);
+            vertAttrs[2] = new(VertexAttribute.TexCoord1, dimension: 3, stream: 2);
+            vertAttrs[3] = new(VertexAttribute.Color,     dimension: 3, stream: 3);
 
             // Set mesh params
             meshData.SetVertexBufferParams(vertexCount, vertAttrs);
@@ -84,8 +85,11 @@ public class Test : MonoBehaviour
             // Tex Coordinates
             var texCoords = meshData.GetVertexData<float3>(1);
             texCoords.CopyFrom(visualBuffer.txuv);
+            // Animation Info
+            var animInfos = meshData.GetVertexData<float3>(2);
+            animInfos.CopyFrom(visualBuffer.uvan);
             // Vertex colors
-            var vertColors = meshData.GetVertexData<float3>(2);
+            var vertColors = meshData.GetVertexData<float3>(3);
             vertColors.CopyFrom(visualBuffer.tint);
 
             // Set face data
@@ -203,10 +207,11 @@ public class Test : MonoBehaviour
             var meshDataArr = Mesh.AllocateWritableMeshData(1);
             var meshData = meshDataArr[0];
 
-            var vertAttrs = new NativeArray<VertexAttributeDescriptor>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            var vertAttrs = new NativeArray<VertexAttributeDescriptor>(4, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             vertAttrs[0] = new(VertexAttribute.Position,  dimension: 3, stream: 0);
             vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 3, stream: 1);
-            vertAttrs[2] = new(VertexAttribute.Color,     dimension: 3, stream: 2);
+            vertAttrs[2] = new(VertexAttribute.TexCoord1, dimension: 3, stream: 2);
+            vertAttrs[3] = new(VertexAttribute.Color,     dimension: 3, stream: 3);
 
             // Set mesh params
             meshData.SetVertexBufferParams(vertexCount, vertAttrs);
@@ -221,8 +226,11 @@ public class Test : MonoBehaviour
             // Tex Coordinates
             var texCoords = meshData.GetVertexData<float3>(1);
             texCoords.CopyFrom(visualBuffer.txuv);
+            // Animation Info
+            var animInfos = meshData.GetVertexData<float3>(2);
+            animInfos.CopyFrom(visualBuffer.uvan);
             // Vertex colors
-            var vertColors = meshData.GetVertexData<float3>(2);
+            var vertColors = meshData.GetVertexData<float3>(3);
             vertColors.CopyFrom(visualBuffer.tint);
 
             // Set face data

@@ -12,13 +12,15 @@ namespace MinecraftClient.Resource
 
         private readonly Dictionary<CullDir, float3[]> vertexArrs;
         private readonly Dictionary<CullDir, float3[]> uvArrs;
+        private readonly Dictionary<CullDir, float3[]> uvAnimArrs;
         private readonly Dictionary<CullDir, int[]> tintIndexArrs;
 
         public BlockGeometry(Dictionary<CullDir, float3[]> vArrs, Dictionary<CullDir, float3[]> uvArrs,
-                Dictionary<CullDir, int[]> tArrs)
+                Dictionary<CullDir, float3[]> aArrs,Dictionary<CullDir, int[]> tArrs)
         {
             this.vertexArrs = vArrs;
             this.uvArrs = uvArrs;
+            this.uvAnimArrs = aArrs;
             this.tintIndexArrs = tArrs;
         }
 
@@ -58,10 +60,12 @@ namespace MinecraftClient.Resource
 
             var verts = new float3[vertexCount];
             var txuvs = new float3[vertexCount];
+            var uvans = new float3[vertexCount];
             var tints = new float3[vertexCount];
 
             buffer.vert.CopyTo(verts, 0);
             buffer.txuv.CopyTo(txuvs, 0);
+            buffer.uvan.CopyTo(uvans, 0);
             buffer.tint.CopyTo(tints, 0);
 
             uint i, vertOffset = (uint)buffer.vert.Length;
@@ -74,6 +78,7 @@ namespace MinecraftClient.Resource
                     tints[i + vertOffset] = tintIndexArrs[CullDir.NONE][i] >= 0 ? blockTint : DEFAULT_COLOR;
                 }
                 uvArrs[CullDir.NONE].CopyTo(txuvs, vertOffset);
+                uvAnimArrs[CullDir.NONE].CopyTo(uvans, vertOffset);
                 vertOffset += (uint)vertexArrs[CullDir.NONE].Length;
             }
 
@@ -85,6 +90,7 @@ namespace MinecraftClient.Resource
                     tints[i + vertOffset] = tintIndexArrs[CullDir.UP][i] >= 0 ? blockTint : DEFAULT_COLOR;
                 }
                 uvArrs[CullDir.UP].CopyTo(txuvs, vertOffset);
+                uvAnimArrs[CullDir.UP].CopyTo(uvans, vertOffset);
                 vertOffset += (uint)vertexArrs[CullDir.UP].Length;
             }
 
@@ -96,6 +102,7 @@ namespace MinecraftClient.Resource
                     tints[i + vertOffset] = tintIndexArrs[CullDir.DOWN][i] >= 0 ? blockTint : DEFAULT_COLOR;
                 }
                 uvArrs[CullDir.DOWN].CopyTo(txuvs, vertOffset);
+                uvAnimArrs[CullDir.DOWN].CopyTo(uvans, vertOffset);
                 vertOffset += (uint)vertexArrs[CullDir.DOWN].Length;
             }
 
@@ -107,6 +114,7 @@ namespace MinecraftClient.Resource
                     tints[i + vertOffset] = tintIndexArrs[CullDir.SOUTH][i] >= 0 ? blockTint : DEFAULT_COLOR;
                 }
                 uvArrs[CullDir.SOUTH].CopyTo(txuvs, vertOffset);
+                uvAnimArrs[CullDir.SOUTH].CopyTo(uvans, vertOffset);
                 vertOffset += (uint)vertexArrs[CullDir.SOUTH].Length;
             }
 
@@ -118,6 +126,7 @@ namespace MinecraftClient.Resource
                     tints[i + vertOffset] = tintIndexArrs[CullDir.NORTH][i] >= 0 ? blockTint : DEFAULT_COLOR;
                 }
                 uvArrs[CullDir.NORTH].CopyTo(txuvs, vertOffset);
+                uvAnimArrs[CullDir.NORTH].CopyTo(uvans, vertOffset);
                 vertOffset += (uint)vertexArrs[CullDir.NORTH].Length;
             }
 
@@ -129,6 +138,7 @@ namespace MinecraftClient.Resource
                     tints[i + vertOffset] = tintIndexArrs[CullDir.EAST][i] >= 0 ? blockTint : DEFAULT_COLOR;
                 }
                 uvArrs[CullDir.EAST].CopyTo(txuvs, vertOffset);
+                uvAnimArrs[CullDir.EAST].CopyTo(uvans, vertOffset);
                 vertOffset += (uint)vertexArrs[CullDir.EAST].Length;
             }
 
@@ -140,11 +150,13 @@ namespace MinecraftClient.Resource
                     tints[i + vertOffset] = tintIndexArrs[CullDir.WEST][i] >= 0 ? blockTint : DEFAULT_COLOR;
                 }
                 uvArrs[CullDir.WEST].CopyTo(txuvs, vertOffset);
+                uvAnimArrs[CullDir.WEST].CopyTo(uvans, vertOffset);
                 vertOffset += (uint)vertexArrs[CullDir.WEST].Length;
             }
 
             buffer.vert = verts;
             buffer.txuv = txuvs;
+            buffer.uvan = uvans;
             buffer.tint = tints;
 
         }
@@ -158,10 +170,12 @@ namespace MinecraftClient.Resource
 
             var verts = new float3[vVertexCount];
             var txuvs = new float3[vVertexCount];
+            var uvans = new float3[vVertexCount];
             var tints = new float3[vVertexCount];
 
             buffer.vert.CopyTo(verts, 0);
             buffer.txuv.CopyTo(txuvs, 0);
+            buffer.uvan.CopyTo(uvans, 0);
             buffer.tint.CopyTo(tints, 0);
 
             var cVerts = new float3[colliderVerts.Length + extraVertCount];
@@ -178,6 +192,7 @@ namespace MinecraftClient.Resource
                     tints[i + vertOffset] = tintIndexArrs[CullDir.NONE][i] >= 0 ? blockTint : DEFAULT_COLOR;
                 }
                 uvArrs[CullDir.NONE].CopyTo(txuvs, vertOffset);
+                uvAnimArrs[CullDir.NONE].CopyTo(uvans, vertOffset);
                 vertOffset += (uint)vertexArrs[CullDir.NONE].Length;
             }
 
@@ -189,6 +204,7 @@ namespace MinecraftClient.Resource
                     tints[i + vertOffset] = tintIndexArrs[CullDir.UP][i] >= 0 ? blockTint : DEFAULT_COLOR;
                 }
                 uvArrs[CullDir.UP].CopyTo(txuvs, vertOffset);
+                uvAnimArrs[CullDir.UP].CopyTo(uvans, vertOffset);
                 vertOffset += (uint)vertexArrs[CullDir.UP].Length;
             }
 
@@ -200,6 +216,7 @@ namespace MinecraftClient.Resource
                     tints[i + vertOffset] = tintIndexArrs[CullDir.DOWN][i] >= 0 ? blockTint : DEFAULT_COLOR;
                 }
                 uvArrs[CullDir.DOWN].CopyTo(txuvs, vertOffset);
+                uvAnimArrs[CullDir.DOWN].CopyTo(uvans, vertOffset);
                 vertOffset += (uint)vertexArrs[CullDir.DOWN].Length;
             }
 
@@ -211,6 +228,7 @@ namespace MinecraftClient.Resource
                     tints[i + vertOffset] = tintIndexArrs[CullDir.SOUTH][i] >= 0 ? blockTint : DEFAULT_COLOR;
                 }
                 uvArrs[CullDir.SOUTH].CopyTo(txuvs, vertOffset);
+                uvAnimArrs[CullDir.SOUTH].CopyTo(uvans, vertOffset);
                 vertOffset += (uint)vertexArrs[CullDir.SOUTH].Length;
             }
 
@@ -222,6 +240,7 @@ namespace MinecraftClient.Resource
                     tints[i + vertOffset] = tintIndexArrs[CullDir.NORTH][i] >= 0 ? blockTint : DEFAULT_COLOR;
                 }
                 uvArrs[CullDir.NORTH].CopyTo(txuvs, vertOffset);
+                uvAnimArrs[CullDir.NORTH].CopyTo(uvans, vertOffset);
                 vertOffset += (uint)vertexArrs[CullDir.NORTH].Length;
             }
 
@@ -233,6 +252,7 @@ namespace MinecraftClient.Resource
                     tints[i + vertOffset] = tintIndexArrs[CullDir.EAST][i] >= 0 ? blockTint : DEFAULT_COLOR;
                 }
                 uvArrs[CullDir.EAST].CopyTo(txuvs, vertOffset);
+                uvAnimArrs[CullDir.EAST].CopyTo(uvans, vertOffset);
                 vertOffset += (uint)vertexArrs[CullDir.EAST].Length;
             }
 
@@ -244,6 +264,7 @@ namespace MinecraftClient.Resource
                     tints[i + vertOffset] = tintIndexArrs[CullDir.WEST][i] >= 0 ? blockTint : DEFAULT_COLOR;
                 }
                 uvArrs[CullDir.WEST].CopyTo(txuvs, vertOffset);
+                uvAnimArrs[CullDir.WEST].CopyTo(uvans, vertOffset);
                 vertOffset += (uint)vertexArrs[CullDir.WEST].Length;
             }
 
@@ -252,6 +273,7 @@ namespace MinecraftClient.Resource
 
             buffer.vert = verts;
             buffer.txuv = txuvs;
+            buffer.uvan = uvans;
             buffer.tint = tints;
 
             colliderVerts = cVerts;

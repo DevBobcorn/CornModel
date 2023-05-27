@@ -13,6 +13,7 @@ namespace MinecraftClient.Resource
 
         public readonly Dictionary<CullDir, List<float3>> verticies = new();
         public readonly Dictionary<CullDir, List<float3>> uvs       = new();
+        public readonly Dictionary<CullDir, List<float3>> uvAnims   = new();
         public readonly Dictionary<CullDir, List<int>> tintIndices  = new();
         public readonly Dictionary<CullDir, uint> vertIndexOffset   = new();
 
@@ -23,6 +24,7 @@ namespace MinecraftClient.Resource
             {
                 verticies.Add(dir, new List<float3>());
                 uvs.Add(dir, new List<float3>());
+                uvAnims.Add(dir, new List<float3>());
                 tintIndices.Add(dir, new List<int>());
                 vertIndexOffset.Add(dir, 0);
             }
@@ -39,6 +41,7 @@ namespace MinecraftClient.Resource
             return new BlockGeometry(
                 verticies.ToDictionary(x => x.Key, x => x.Value.ToArray()),
                 uvs.ToDictionary(x => x.Key, x => x.Value.ToArray()),
+                uvAnims.ToDictionary(x => x.Key, x => x.Value.ToArray()),
                 tintIndices.ToDictionary(x => x.Key, x => x.Value.ToArray())
             );
         }
@@ -130,7 +133,9 @@ namespace MinecraftClient.Resource
                 // state rotation, and it rotates the area of texture which is used on the face
                 int uvAreaRot = stateRotated && uvlock ? uvlockMap[zyRot][facePair.Key] : 0;
 
-                float3[] remappedUVs = ResourcePackManager.Instance.GetUVs(texIdentifier, face.uv / MC_UV_SCALE, uvAreaRot);
+                var uvInfo = ResourcePackManager.Instance.GetUVs(texIdentifier, face.uv / MC_UV_SCALE, uvAreaRot);
+                var remappedUVs = uvInfo.uvs;
+                var animInfo = uvInfo.anim;
 
                 // This rotation doesn't change the area of texture used...
                 // See https://minecraft.fandom.com/wiki/Model#Block_models
@@ -161,13 +166,16 @@ namespace MinecraftClient.Resource
                         uvs[cullDir].Add(remappedUVs[3]); // 3
                         break;
                 }
+
+                // Add uv animation data
+                uvAnims[cullDir].Add(animInfo);
+                uvAnims[cullDir].Add(animInfo);
+                uvAnims[cullDir].Add(animInfo);
+                uvAnims[cullDir].Add(animInfo);
                 
                 // And tint indices..
                 for (int i = 0;i < 4;i++)
                     tintIndices[cullDir].Add(face.tintIndex);
-
-                // Update vertex offset to current face's cull direction
-                uint offset = vertIndexOffset[cullDir];
 
                 // Increament vertex index offset of this cull direction
                 vertIndexOffset[cullDir] += 4; // Four vertices per quad

@@ -51,18 +51,22 @@ namespace MinecraftClient.Resource
 
             var verts = new float3[newLength];
             var txuvs = new float3[newLength];
+            var uvans = new float3[newLength];
             var tints = new float3[newLength];
 
             buffer.vert.CopyTo(verts, 0);
             buffer.txuv.CopyTo(txuvs, 0);
+            buffer.uvan.CopyTo(uvans, 0);
             buffer.tint.CopyTo(tints, 0);
 
             for (int fti = vertOffset;fti < newLength;fti++)
                 tints[fti] = fluidColor;
 
-            float3[] fullUVs = ResourcePackManager.Instance.GetUVs(liquid, FULL, 0);
-            //float3[] sideUVs = ResourcePackManager.Instance.GetUVs(liquid, new(0, 1 - h, 1, 1), 0);
+            var uvInfo = ResourcePackManager.Instance.GetUVs(liquid, FULL, 0);
+            float3[] fullUVs = uvInfo.uvs;
             float3[] sideUVs = fullUVs;
+
+            float3[] uvAnims = new float3[] { uvInfo.anim, uvInfo.anim, uvInfo.anim, uvInfo.anim };
 
             if ((cullFlags & (1 << 0)) != 0) // Up
             {
@@ -71,6 +75,7 @@ namespace MinecraftClient.Resource
                 verts[vertOffset + 2] = new(0 + z, hnw + y, 0 + x); // 3 => 1
                 verts[vertOffset + 3] = new(1 + z, hsw + y, 0 + x); // 2 => 0
                 fullUVs.CopyTo(txuvs, vertOffset);
+                uvAnims.CopyTo(uvans, vertOffset);
                 vertOffset += 4;
             }
 
@@ -81,6 +86,7 @@ namespace MinecraftClient.Resource
                 verts[vertOffset + 2] = new(0 + z, O + y, 1 + x); // 7 => 3
                 verts[vertOffset + 3] = new(1 + z, O + y, 1 + x); // 6 => 2
                 fullUVs.CopyTo(txuvs, vertOffset);
+                uvAnims.CopyTo(uvans, vertOffset);
                 vertOffset += 4;
             }
 
@@ -91,6 +97,7 @@ namespace MinecraftClient.Resource
                 verts[vertOffset + 2] = new(I + z,   0 + y, O + x); // 1 => 0
                 verts[vertOffset + 3] = new(I + z,   0 + y, I + x); // 6 => 3
                 sideUVs.CopyTo(txuvs, vertOffset);
+                uvAnims.CopyTo(uvans, vertOffset);
                 vertOffset += 4;
             }
 
@@ -101,6 +108,7 @@ namespace MinecraftClient.Resource
                 verts[vertOffset + 2] = new(O + z,   0 + y, I + x); // 7 => 3
                 verts[vertOffset + 3] = new(O + z,   0 + y, O + x); // 0 => 0
                 sideUVs.CopyTo(txuvs, vertOffset);
+                uvAnims.CopyTo(uvans, vertOffset);
                 vertOffset += 4;
             }
 
@@ -111,6 +119,7 @@ namespace MinecraftClient.Resource
                 verts[vertOffset + 2] = new(I + z,   0 + y, I + x); // 6 => 2
                 verts[vertOffset + 3] = new(O + z,   0 + y, I + x); // 7 => 3
                 sideUVs.CopyTo(txuvs, vertOffset);
+                uvAnims.CopyTo(uvans, vertOffset);
                 vertOffset += 4;
             }
 
@@ -121,11 +130,13 @@ namespace MinecraftClient.Resource
                 verts[vertOffset + 2] = new(O + z,   0 + y, O + x); // 0 => 0
                 verts[vertOffset + 3] = new(I + z,   0 + y, O + x); // 1 => 1
                 sideUVs.CopyTo(txuvs, vertOffset);
+                uvAnims.CopyTo(uvans, vertOffset);
                 // Not necessary vertOffset += 4;
             }
 
             buffer.vert = verts;
             buffer.txuv = txuvs;
+            buffer.uvan = uvans;
             buffer.tint = tints;
 
         }

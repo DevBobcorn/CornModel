@@ -6,13 +6,15 @@ namespace MinecraftClient.Resource
     {
         public readonly bool isGenerated = false;
         private readonly float3[] vertexArr;
-        private float3[] uvArr;
-        private int[] tintIndexArr;
+        private readonly float3[] uvArr;
+        private readonly float3[] uvAnimArr;
+        private readonly int[] tintIndexArr;
 
-        public ItemGeometry(float3[] vArr, float3[] uvArr, int[] tArr, bool isGenerated)
+        public ItemGeometry(float3[] vArr, float3[] uvArr, float3[] aArr, int[] tArr, bool isGenerated)
         {
             this.vertexArr = vArr;
             this.uvArr = uvArr;
+            this.uvAnimArr = aArr;
             this.tintIndexArr = tArr;
             this.isGenerated = isGenerated;
         }
@@ -23,10 +25,12 @@ namespace MinecraftClient.Resource
 
             var verts = new float3[vertexCount];
             var txuvs = new float3[vertexCount];
+            var uvans = new float3[vertexCount];
             var tints = new float3[vertexCount];
 
             buffer.vert.CopyTo(verts, 0);
             buffer.txuv.CopyTo(txuvs, 0);
+            buffer.uvan.CopyTo(uvans, 0);
             buffer.tint.CopyTo(tints, 0);
 
             uint i, vertOffset = (uint)buffer.vert.Length;
@@ -39,11 +43,13 @@ namespace MinecraftClient.Resource
                     tints[i + vertOffset] = tintIndexArr[i] >= 0 && tintIndexArr[i] < itemTints.Length ? itemTints[tintIndexArr[i]] : BlockGeometry.DEFAULT_COLOR;
                 }
                 uvArr.CopyTo(txuvs, vertOffset);
+                uvAnimArr.CopyTo(uvans, vertOffset);
                 vertOffset += (uint)vertexArr.Length;
             }
 
             buffer.vert = verts;
             buffer.txuv = txuvs;
+            buffer.uvan = uvans;
             buffer.tint = tints;
 
         }

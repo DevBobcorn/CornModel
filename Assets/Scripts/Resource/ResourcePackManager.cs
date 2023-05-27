@@ -119,7 +119,7 @@ namespace MinecraftClient.Resource
 
             // Perform integrity check...
             var statesTable = BlockStatePalette.INSTANCE.StatesTable;
-
+ 
             foreach (var stateItem in statesTable)
             {
                 if (!StateModelTable.ContainsKey(stateItem.Key))
@@ -248,33 +248,33 @@ namespace MinecraftClient.Resource
 
         }
         
-        public readonly TextureInfo DEFAULT_TEXTURE_INFO = new(new(), 0, false);
+        public readonly TextureInfo DEFAULT_TEXTURE_INFO = new(new(), 0);
 
         private Dictionary<ResourceLocation, TextureInfo> texAtlasTable = new();
 
-        public float3[] GetUVs(ResourceLocation identifier, Vector4 part, int areaRot)
+        /// <summary>
+        /// Get texture uvs (x, y, depth in atlas array) and texture animation info (frame count, frame interval, frame offset)
+        /// </summary>
+        public (float3[] uvs, float3 anim) GetUVs(ResourceLocation identifier, Vector4 part, int areaRot)
         {
             var info = GetTextureInfo(identifier);
-            return GetUVsAt(info.bounds, info.index, info.animatable, part, areaRot);
+            if (info.frameCount > 1) // This texture is animated
+            {
+                var heightPerFrame = info.bounds.height / info.frameCount;
+
+                return (GetUVsAt(info.bounds, info.index, heightPerFrame, part, areaRot),
+                        new(info.frameCount, info.frameInterval, -heightPerFrame));
+            }
+            return (GetUVsAt(info.bounds, info.index, info.bounds.height, part, areaRot), float3.zero);
         }
 
-        private float3[] GetUVsAt(Rect bounds, int index, bool animatable, Vector4 part, int areaRot)
+        private float3[] GetUVsAt(Rect bounds, int index, float textureHeight, Vector4 part, int areaRot)
         {
             float oneU = bounds.width;
-            float oneV;
-
-            if (animatable)
-            {
-                // Use width here because a texture can contain multiple frames
-                // TODO Real support for animatable texture
-                // TODO Solve the texture bleeding problem
-                oneV = bounds.width; 
-            }
-            else
-                oneV = bounds.height;
+            float oneV = textureHeight;
 
             // Get texture offset in atlas
-            float3 o = new(bounds.xMin, bounds.yMin, index + 0.1F);
+            float3 o = new(bounds.xMin, bounds.yMax - textureHeight, index + 0.1F);
 
             // vect:  x,  y,  z,  w
             // vect: x1, y1, x2, y2
@@ -315,7 +315,7 @@ namespace MinecraftClient.Resource
             };
         }
 
-        public const int ATLAS_SIZE = 512;
+        public const int ATLAS_SIZE = 1024;
         
         private IEnumerator GenerateAtlas(DataLoadFlag atlasGenFlag)
         {
@@ -379,7 +379,7 @@ namespace MinecraftClient.Resource
             List<Texture2D> atlases = new();
 
             int totalVolume = ATLAS_SIZE * ATLAS_SIZE;
-            int maxContentVolume = (int)(totalVolume * 0.95F);
+            int maxContentVolume = (int)(totalVolume * 0.97F);
 
             do
             {
@@ -445,11 +445,20 @@ namespace MinecraftClient.Resource
                 for (int i = 0;i < consumedTexCount;i++)
                 {
                     //Debug.Log($"{ids[curTexIndex + i]} => ({curAtlasIndex}) {rects[i].xMin} {rects[i].xMax} {rects[i].yMin} {rects[i].yMax}");
-                    
+
                     // TODO Read texture meta file and use that information
                     bool animatable = ids[curTexIndex + i].Path.StartsWith("item") || ids[curTexIndex + i].Path.StartsWith("block");
                     
-                    texAtlasTable.Add(ids[curTexIndex + i], new(rects[i], curAtlasIndex, animatable));
+                    int frameCount = 1;
+                    float frameInterval = 0.05F;
+
+                    if (animatable)
+                    {
+                        var curTex = textures[curTexIndex + i];
+                        frameCount = curTex.height / curTex.width;
+                    }
+
+                    texAtlasTable.Add(ids[curTexIndex + i], new(rects[i], curAtlasIndex, frameCount, frameInterval));
                 }
 
                 curTexIndex += consumedTexCount;

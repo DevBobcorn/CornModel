@@ -11,6 +11,7 @@ namespace MinecraftClient.Resource
 
         private readonly List<float3> verticies = new();
         private readonly List<float3> uvs       = new();
+        private readonly List<float3> uvAnims   = new();
         private readonly List<int> tintIndices  = new();
 
         public ItemGeometryBuilder(JsonModel model)
@@ -25,6 +26,7 @@ namespace MinecraftClient.Resource
             return new ItemGeometry(
                 verticies.ToArray(),
                 uvs.ToArray(),
+                uvAnims.ToArray(),
                 tintIndices.ToArray(),
                 isGenerated
             );
@@ -96,7 +98,9 @@ namespace MinecraftClient.Resource
 
                 ResourceLocation texIdentifier = model.resolveTextureName(face.texName);
 
-                float3[] remappedUVs = ResourcePackManager.Instance.GetUVs(texIdentifier, face.uv / MC_UV_SCALE, 0);
+                var uvInfo = ResourcePackManager.Instance.GetUVs(texIdentifier, face.uv / MC_UV_SCALE, 0);
+                var remappedUVs = uvInfo.uvs;
+                var animInfo = uvInfo.anim;
 
                 // This rotation doesn't change the area of texture used...
                 // See https://minecraft.fandom.com/wiki/Model#Block_models
@@ -127,6 +131,12 @@ namespace MinecraftClient.Resource
                         uvs.Add(remappedUVs[3]); // 3
                         break;
                 }
+                
+                // Add uv animation data
+                uvAnims.Add(animInfo);
+                uvAnims.Add(animInfo);
+                uvAnims.Add(animInfo);
+                uvAnims.Add(animInfo);
                 
                 // And tint indices..
                 for (int i = 0;i < 4;i++)
