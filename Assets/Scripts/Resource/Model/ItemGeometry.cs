@@ -7,10 +7,10 @@ namespace MinecraftClient.Resource
         public readonly bool isGenerated = false;
         private readonly float3[] vertexArr;
         private readonly float3[] uvArr;
-        private readonly float3[] uvAnimArr;
+        private readonly float4[] uvAnimArr;
         private readonly int[] tintIndexArr;
 
-        public ItemGeometry(float3[] vArr, float3[] uvArr, float3[] aArr, int[] tArr, bool isGenerated)
+        public ItemGeometry(float3[] vArr, float3[] uvArr, float4[] aArr, int[] tArr, bool isGenerated)
         {
             this.vertexArr = vArr;
             this.uvArr = uvArr;
@@ -25,7 +25,7 @@ namespace MinecraftClient.Resource
 
             var verts = new float3[vertexCount];
             var txuvs = new float3[vertexCount];
-            var uvans = new float3[vertexCount];
+            var uvans = new float4[vertexCount];
             var tints = new float3[vertexCount];
 
             buffer.vert.CopyTo(verts, 0);
@@ -44,7 +44,6 @@ namespace MinecraftClient.Resource
                 }
                 uvArr.CopyTo(txuvs, vertOffset);
                 uvAnimArr.CopyTo(uvans, vertOffset);
-                vertOffset += (uint)vertexArr.Length;
             }
 
             buffer.vert = verts;

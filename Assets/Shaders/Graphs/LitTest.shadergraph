@@ -1921,10 +1921,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -1005.5999145507813,
-            "y": -270.3999938964844,
-            "width": 214.39996337890626,
-            "height": 141.59996032714845
+            "x": -1005.5999755859375,
+            "y": -270.4000549316406,
+            "width": 214.4000244140625,
+            "height": 141.60000610351563
         }
     },
     "m_Slots": [
@@ -1958,7 +1958,7 @@
     "m_SourceType": 1,
     "m_FunctionName": "GetTexUV",
     "m_FunctionSource": "",
-    "m_FunctionBody": "float frameCount = AnimInfo.x;\n\nif (frameCount > 1) {\n\tfloat frameInterval = AnimInfo.y;\n\n\tfloat cycleTime = fmod(AnimTime, frameInterval * frameCount);\n\tfloat curFrame = floor(cycleTime / frameInterval);\n\n\tfloat offsetY = curFrame * AnimInfo.z;\n\t\n\tTexUV = float2(BaseUV.x, BaseUV.y + offsetY);\n} else {\n\tTexUV = BaseUV.xy;\n}\n\nTexIndex = BaseUV.z;"
+    "m_FunctionBody": "float frameCount = AnimInfo.x;\n\nif (frameCount > 1) {\n\tfloat frameInterval = AnimInfo.y;\n\n\tfloat cycleTime = fmod(AnimTime, frameInterval * frameCount);\n\tint curFrame = floor(cycleTime / frameInterval);\n\tint framePerRow = round(AnimInfo.w);\n\n\tint offsetX = curFrame % framePerRow;\n\tint offsetY = -(curFrame / framePerRow);\n\t\n\tTexUV = float2(BaseUV.x + offsetX * AnimInfo.z, BaseUV.y + offsetY* AnimInfo.z);\n} else {\n\tTexUV = BaseUV.xy;\n}\n\nTexIndex = BaseUV.z;"
 }
 
 {

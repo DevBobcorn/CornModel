@@ -13,7 +13,7 @@ namespace MinecraftClient.Resource
 
         public readonly Dictionary<CullDir, List<float3>> verticies = new();
         public readonly Dictionary<CullDir, List<float3>> uvs       = new();
-        public readonly Dictionary<CullDir, List<float3>> uvAnims   = new();
+        public readonly Dictionary<CullDir, List<float4>> uvAnims   = new();
         public readonly Dictionary<CullDir, List<int>> tintIndices  = new();
         public readonly Dictionary<CullDir, uint> vertIndexOffset   = new();
 
@@ -24,7 +24,7 @@ namespace MinecraftClient.Resource
             {
                 verticies.Add(dir, new List<float3>());
                 uvs.Add(dir, new List<float3>());
-                uvAnims.Add(dir, new List<float3>());
+                uvAnims.Add(dir, new List<float4>());
                 tintIndices.Add(dir, new List<int>());
                 vertIndexOffset.Add(dir, 0);
             }

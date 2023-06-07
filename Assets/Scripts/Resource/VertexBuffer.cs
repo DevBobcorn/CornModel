@@ -17,7 +17,7 @@ namespace MinecraftClient.Resource
         /// <summary>
         /// Texture uv animation array (frame count, frame interval, frame offset)
         /// </summary>
-        public float3[] uvan = { };
+        public float4[] uvan = { };
 
         /// <summary>
         /// Tint index array

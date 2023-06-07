@@ -47,7 +47,7 @@ namespace MinecraftClient.Resource
         public int GeneratedItemModelPrecision { get; set; } = 16;
         public int GeneratedItemModelThickness { get; set; } =  1;
 
-        private readonly List<ResourcePack> packs = new List<ResourcePack>();
+        private readonly List<ResourcePack> packs = new();
 
         public static readonly ResourcePackManager Instance = new();
 
@@ -250,31 +250,28 @@ namespace MinecraftClient.Resource
         
         public readonly TextureInfo DEFAULT_TEXTURE_INFO = new(new(), 0);
 
-        private Dictionary<ResourceLocation, TextureInfo> texAtlasTable = new();
+        private readonly Dictionary<ResourceLocation, TextureInfo> texAtlasTable = new();
 
         /// <summary>
         /// Get texture uvs (x, y, depth in atlas array) and texture animation info (frame count, frame interval, frame offset)
         /// </summary>
-        public (float3[] uvs, float3 anim) GetUVs(ResourceLocation identifier, Vector4 part, int areaRot)
+        public (float3[] uvs, float4 anim) GetUVs(ResourceLocation identifier, Vector4 part, int areaRot)
         {
             var info = GetTextureInfo(identifier);
             if (info.frameCount > 1) // This texture is animated
             {
-                var heightPerFrame = info.bounds.height / info.frameCount;
+                float oneX = info.bounds.width / info.framePerRow;
 
-                return (GetUVsAt(info.bounds, info.index, heightPerFrame, part, areaRot),
-                        new(info.frameCount, info.frameInterval, -heightPerFrame));
+                return (GetUVsAt(info.bounds, info.index, oneX, oneX, part, areaRot),
+                        new(info.frameCount, info.frameInterval, oneX, info.framePerRow));
             }
-            return (GetUVsAt(info.bounds, info.index, info.bounds.height, part, areaRot), float3.zero);
+            return (GetUVsAt(info.bounds, info.index, info.bounds.width, info.bounds.height, part, areaRot), float4.zero);
         }
 
-        private float3[] GetUVsAt(Rect bounds, int index, float textureHeight, Vector4 part, int areaRot)
+        private float3[] GetUVsAt(Rect bounds, int index, float oneU, float oneV, Vector4 part, int areaRot)
         {
-            float oneU = bounds.width;
-            float oneV = textureHeight;
-
             // Get texture offset in atlas
-            float3 o = new(bounds.xMin, bounds.yMax - textureHeight, index + 0.1F);
+            float3 o = new(bounds.xMin, bounds.yMax - oneV, index + 0.1F);
 
             // vect:  x,  y,  z,  w
             // vect: x1, y1, x2, y2
@@ -316,6 +313,64 @@ namespace MinecraftClient.Resource
         }
 
         public const int ATLAS_SIZE = 1024;
+
+        private record TextureAnimationInfo
+        {
+            public int framePerRow;
+            public int frameCount;
+            public float frameInterval;
+
+            public TextureAnimationInfo(int f, int fRow, float i)
+            {
+                frameCount = f;
+                framePerRow = fRow;
+                frameInterval = i;
+            }
+        }
+
+        private (Texture2D, TextureAnimationInfo?) LoadSingleTexture(ResourceLocation texId, string texFilePath)
+        {
+            Texture2D tex = new(2, 2)
+            {
+                name = texId.ToString()
+            };
+
+            tex.LoadImage(File.ReadAllBytes(texFilePath));
+
+            if (File.Exists($"{texFilePath}.mcmeta")) // Has animation info
+            {
+                int frameSize = tex.width;
+
+                // TODO Get frame count from meta
+                int frameCount = tex.height / tex.width;
+
+                if (frameCount > 1)
+                {
+                    int framePerRow = Mathf.CeilToInt(math.sqrt(frameCount));
+                    int framePerCol = Mathf.CeilToInt((float) frameCount / framePerRow);
+
+                    // Re-arrange the texture
+                    Texture2D rearranged = new(framePerRow * frameSize, framePerCol * frameSize);
+
+                    float frameInterval = 0.05F;
+
+                    //Debug.Log($"Animated texture {texId} (pr: {framePerRow} pc: {framePerCol} f: {frameCount})");
+
+                    for (int frame = 0;frame < frameCount;frame++)
+                    {
+                        // Copy pixel data
+                        Graphics.CopyTexture(tex, 0, 0, 0, (frameCount - 1 - frame) * frameSize, frameSize, frameSize,
+                                rearranged, 0, 0, (frame % framePerRow) * frameSize, (framePerCol - 1 - frame / framePerRow) * frameSize);
+                        
+                    }
+
+                    return (rearranged, new(frameCount, framePerRow, frameInterval));
+
+                }
+            }
+
+            return (tex, null);
+        }
         
         private IEnumerator GenerateAtlas(DataLoadFlag atlasGenFlag)
         {
@@ -358,7 +413,7 @@ namespace MinecraftClient.Resource
             foreach (var liquidTex in FluidGeometry.LiquidTextures)
                 textureIdSet.Add(liquidTex);
 
-            var textures = new Texture2D[textureIdSet.Count];
+            var textureInfos = new (Texture2D, TextureAnimationInfo?)[textureIdSet.Count];
             var ids = new ResourceLocation[textureIdSet.Count];
 
             foreach (var texId in textureIdSet) // Load texture files...
@@ -366,12 +421,8 @@ namespace MinecraftClient.Resource
                 var texFilePath = texDict[texId];
                 ids[count] = texId;
                 //Debug.Log($"Loading {texId} from {texFilePath}");
+                textureInfos[count++] = LoadSingleTexture(texId, texFilePath);
 
-                Texture2D tex = new(2, 2);
-                tex.name = texId.ToString();
-                tex.LoadImage(File.ReadAllBytes(texFilePath));
-
-                textures[count++] = tex;
                 if (count % 5 == 0) yield return null;
             }
             
@@ -391,7 +442,7 @@ namespace MinecraftClient.Resource
                     if (lastTexIndex >= textureIdSet.Count - 1)
                         break;
 
-                    var nextTex = textures[lastTexIndex + 1];
+                    (var nextTex, var nextAnimInfo) = textureInfos[lastTexIndex + 1];
                     curVolume += nextTex.width * nextTex.height;
 
                     if (curVolume < maxContentVolume)
@@ -410,12 +461,15 @@ namespace MinecraftClient.Resource
                 }
 
                 // Then we go stitch 'em        (inclusive)..(exclusive)
-                var texturesConsumed = textures[curTexIndex..(lastTexIndex + 1)];
+                var textureInfosConsumed = textureInfos[curTexIndex..(lastTexIndex + 1)];
 
-                var atlas = new Texture2D(ATLAS_SIZE, ATLAS_SIZE); // First assign a placeholder
-                atlas.filterMode = FilterMode.Point;
+                // First assign a placeholder
+                var atlas = new Texture2D(ATLAS_SIZE, ATLAS_SIZE)
+                {
+                    filterMode = FilterMode.Point
+                };
 
-                var rects = atlas.PackTextures(texturesConsumed, 0, ATLAS_SIZE, false);
+                var rects = atlas.PackTextures(textureInfosConsumed.Select(x => x.Item1).ToArray(), 0, ATLAS_SIZE, false);
 
                 if (atlas.width != ATLAS_SIZE || atlas.height != ATLAS_SIZE)
                 {
@@ -425,8 +479,8 @@ namespace MinecraftClient.Resource
 
                     Graphics.CopyTexture(atlas, 0, 0, 0, 0, atlas.width, atlas.height, newAtlas, 0, 0, 0, 0);
 
-                    float scaleX = (float) atlas.width  / (float) ATLAS_SIZE;
-                    float scaleY = (float) atlas.height / (float) ATLAS_SIZE;
+                    float scaleX = atlas.width  / (float) ATLAS_SIZE;
+                    float scaleY = atlas.height / (float) ATLAS_SIZE;
 
                     // Rescale the texture boundaries
                     for (int i = 0;i < rects.Length;i++)
@@ -442,27 +496,21 @@ namespace MinecraftClient.Resource
 
                 atlases.Add(atlas);
 
+                yield return null;
+
                 for (int i = 0;i < consumedTexCount;i++)
                 {
                     //Debug.Log($"{ids[curTexIndex + i]} => ({curAtlasIndex}) {rects[i].xMin} {rects[i].xMax} {rects[i].yMin} {rects[i].yMax}");
-
-                    // TODO Read texture meta file and use that information
-                    bool animatable = ids[curTexIndex + i].Path.StartsWith("item") || ids[curTexIndex + i].Path.StartsWith("block");
+                    var curAnimInfo = textureInfos[curTexIndex + i].Item2;
                     
-                    int frameCount = 1;
-                    float frameInterval = 0.05F;
-
-                    if (animatable)
-                    {
-                        var curTex = textures[curTexIndex + i];
-                        frameCount = curTex.height / curTex.width;
-                    }
-
-                    texAtlasTable.Add(ids[curTexIndex + i], new(rects[i], curAtlasIndex, frameCount, frameInterval));
+                    if (curAnimInfo is null)
+                        texAtlasTable.Add(ids[curTexIndex + i], new(rects[i], curAtlasIndex));
+                    else
+                        texAtlasTable.Add(ids[curTexIndex + i], new(rects[i], curAtlasIndex,
+                                curAnimInfo.frameCount, rects[i].width / curAnimInfo.framePerRow, curAnimInfo.framePerRow, curAnimInfo.frameInterval));
                 }
 
                 curTexIndex += consumedTexCount;
-
                 curAtlasIndex++;
 
                 yield return null;

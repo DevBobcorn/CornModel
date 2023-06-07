@@ -12,11 +12,11 @@ namespace MinecraftClient.Resource
 
         private readonly Dictionary<CullDir, float3[]> vertexArrs;
         private readonly Dictionary<CullDir, float3[]> uvArrs;
-        private readonly Dictionary<CullDir, float3[]> uvAnimArrs;
+        private readonly Dictionary<CullDir, float4[]> uvAnimArrs;
         private readonly Dictionary<CullDir, int[]> tintIndexArrs;
 
         public BlockGeometry(Dictionary<CullDir, float3[]> vArrs, Dictionary<CullDir, float3[]> uvArrs,
-                Dictionary<CullDir, float3[]> aArrs,Dictionary<CullDir, int[]> tArrs)
+                Dictionary<CullDir, float4[]> aArrs,Dictionary<CullDir, int[]> tArrs)
         {
             this.vertexArrs = vArrs;
             this.uvArrs = uvArrs;
@@ -56,11 +56,11 @@ namespace MinecraftClient.Resource
         public void Build(ref VertexBuffer buffer, float3 posOffset, int cullFlags, float3 blockTint)
         {
             // Compute value if absent
-            int vertexCount = buffer.vert.Length + ((sizeCache.ContainsKey(cullFlags)) ? sizeCache[cullFlags] : (sizeCache[cullFlags] = CalculateArraySize(cullFlags)));
+            int vertexCount = buffer.vert.Length + (sizeCache.ContainsKey(cullFlags) ? sizeCache[cullFlags] : (sizeCache[cullFlags] = CalculateArraySize(cullFlags)));
 
             var verts = new float3[vertexCount];
             var txuvs = new float3[vertexCount];
-            var uvans = new float3[vertexCount];
+            var uvans = new float4[vertexCount];
             var tints = new float3[vertexCount];
 
             buffer.vert.CopyTo(verts, 0);
@@ -151,7 +151,7 @@ namespace MinecraftClient.Resource
                 }
                 uvArrs[CullDir.WEST].CopyTo(txuvs, vertOffset);
                 uvAnimArrs[CullDir.WEST].CopyTo(uvans, vertOffset);
-                vertOffset += (uint)vertexArrs[CullDir.WEST].Length;
+                // vertOffset += (uint)vertexArrs[CullDir.WEST].Length; // Unnecessary since it's the last part
             }
 
             buffer.vert = verts;
@@ -170,7 +170,7 @@ namespace MinecraftClient.Resource
 
             var verts = new float3[vVertexCount];
             var txuvs = new float3[vVertexCount];
-            var uvans = new float3[vVertexCount];
+            var uvans = new float4[vVertexCount];
             var tints = new float3[vVertexCount];
 
             buffer.vert.CopyTo(verts, 0);
@@ -265,7 +265,7 @@ namespace MinecraftClient.Resource
                 }
                 uvArrs[CullDir.WEST].CopyTo(txuvs, vertOffset);
                 uvAnimArrs[CullDir.WEST].CopyTo(uvans, vertOffset);
-                vertOffset += (uint)vertexArrs[CullDir.WEST].Length;
+                // vertOffset += (uint)vertexArrs[CullDir.WEST].Length; // Unnecessary since it's the last part
             }
 
             // Copy from visual buffer to collider
@@ -337,7 +337,7 @@ namespace MinecraftClient.Resource
             {
                 for (i = 0U;i < vertexArrs[CullDir.WEST].Length;i++)
                     verts[i + vertOffset] = vertexArrs[CullDir.WEST][i] + posOffset;
-                vertOffset += (uint)vertexArrs[CullDir.WEST].Length;
+                // vertOffset += (uint)vertexArrs[CullDir.WEST].Length; // Unnecessary since it's the last part
             }
 
             colliderVerts = verts;

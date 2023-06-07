@@ -11,7 +11,7 @@ namespace MinecraftClient.Resource
 
         private readonly List<float3> verticies = new();
         private readonly List<float3> uvs       = new();
-        private readonly List<float3> uvAnims   = new();
+        private readonly List<float4> uvAnims   = new();
         private readonly List<int> tintIndices  = new();
 
         public ItemGeometryBuilder(JsonModel model)

@@ -20,7 +20,7 @@ namespace MinecraftClient.Resource
         private const float O = 0.001F;
         private const float I = 0.999F;
 
-        private static float getAverageHeight(byte h1, byte h2, byte h3, byte h4)
+        private static float GetAverageHeight(byte h1, byte h2, byte h3, byte h4)
         {
             int cnt = 0;
             if (h1 > 0) cnt++;
@@ -41,17 +41,17 @@ namespace MinecraftClient.Resource
             
             var full = (cullFlags & (1 << 0)) == 0;
 
-            var hne = full ? 1F : getAverageHeight(heights[0], heights[1], heights[3], heights[4]);
-            var hse = full ? 1F : getAverageHeight(heights[1], heights[2], heights[4], heights[5]);
-            var hnw = full ? 1F : getAverageHeight(heights[3], heights[4], heights[6], heights[7]);
-            var hsw = full ? 1F : getAverageHeight(heights[4], heights[5], heights[7], heights[8]);
+            var hne = full ? 1F : GetAverageHeight(heights[0], heights[1], heights[3], heights[4]);
+            var hse = full ? 1F : GetAverageHeight(heights[1], heights[2], heights[4], heights[5]);
+            var hnw = full ? 1F : GetAverageHeight(heights[3], heights[4], heights[6], heights[7]);
+            var hsw = full ? 1F : GetAverageHeight(heights[4], heights[5], heights[7], heights[8]);
 
             int vertOffset = buffer.vert.Length;
             int newLength = vertOffset + arraySizeMap[cullFlags];
 
             var verts = new float3[newLength];
             var txuvs = new float3[newLength];
-            var uvans = new float3[newLength];
+            var uvans = new float4[newLength];
             var tints = new float3[newLength];
 
             buffer.vert.CopyTo(verts, 0);
@@ -62,11 +62,10 @@ namespace MinecraftClient.Resource
             for (int fti = vertOffset;fti < newLength;fti++)
                 tints[fti] = fluidColor;
 
-            var uvInfo = ResourcePackManager.Instance.GetUVs(liquid, FULL, 0);
-            float3[] fullUVs = uvInfo.uvs;
+            var (fullUVs, anim) = ResourcePackManager.Instance.GetUVs(liquid, FULL, 0);
             float3[] sideUVs = fullUVs;
 
-            float3[] uvAnims = new float3[] { uvInfo.anim, uvInfo.anim, uvInfo.anim, uvInfo.anim };
+            float4[] uvAnims = { anim, anim, anim, anim };
 
             if ((cullFlags & (1 << 0)) != 0) // Up
             {
