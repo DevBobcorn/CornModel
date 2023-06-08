@@ -1955,9 +1955,9 @@
     "m_CustomColors": {
         "m_SerializableColors": []
     },
-    "m_SourceType": 1,
+    "m_SourceType": 0,
     "m_FunctionName": "GetTexUV",
-    "m_FunctionSource": "",
+    "m_FunctionSource": "3b6eeb9204e4f774aa09f5c0b8b89026",
     "m_FunctionBody": "float frameCount = AnimInfo.x;\n\nif (frameCount > 1) {\n\tfloat frameInterval = AnimInfo.y;\n\n\tfloat cycleTime = fmod(AnimTime, frameInterval * frameCount);\n\tint curFrame = floor(cycleTime / frameInterval);\n\tint framePerRow = round(AnimInfo.w);\n\n\tint offsetX = curFrame % framePerRow;\n\tint offsetY = -(curFrame / framePerRow);\n\t\n\tTexUV = float2(BaseUV.x + offsetX * AnimInfo.z, BaseUV.y + offsetY* AnimInfo.z);\n} else {\n\tTexUV = BaseUV.xy;\n}\n\nTexIndex = BaseUV.z;"
 }
 
