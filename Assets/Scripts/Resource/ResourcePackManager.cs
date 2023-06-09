@@ -339,28 +339,49 @@ namespace MinecraftClient.Resource
 
             if (File.Exists($"{texFilePath}.mcmeta")) // Has animation info
             {
-                int frameSize = tex.width;
+                int spriteCount = tex.height / tex.width;
 
-                // TODO Get frame count from meta
-                int frameCount = tex.height / tex.width;
+                var animJson = Json.ParseJson(File.ReadAllText($"{texFilePath}.mcmeta")).Properties["animation"];
+
+                int[] frames;
+                
+                if (animJson.Properties.ContainsKey("frames")) // Place the frames in specified order
+                {
+                    frames = animJson.Properties["frames"].DataArray.Select(x => int.Parse(x.StringValue)).ToArray();
+                }
+                else // Place the frames in ordinal order, from top to bottom
+                {
+                    frames = Enumerable.Range(0, spriteCount).ToArray();
+                }
+                
+                int frameCount = frames.Length;
 
                 if (frameCount > 1)
                 {
+                    float frameInterval;
+
+                    if (animJson.Properties.ContainsKey("frametime")) // Use specified frame interval
+                        frameInterval = int.Parse(animJson.Properties["frametime"].StringValue) * 0.05F;
+                    else // Use default frame interval
+                        frameInterval = 0.05F;
+
+                    int frameSize = tex.width;
+                    
                     int framePerRow = Mathf.CeilToInt(math.sqrt(frameCount));
                     int framePerCol = Mathf.CeilToInt((float) frameCount / framePerRow);
 
                     // Re-arrange the texture
                     Texture2D rearranged = new(framePerRow * frameSize, framePerCol * frameSize);
-
-                    float frameInterval = 0.05F;
-
                     //Debug.Log($"Animated texture {texId} (pr: {framePerRow} pc: {framePerCol} f: {frameCount})");
+                    Debug.Log($"Animated texture {texId} (frames: {string.Join(",", frames)})");
 
-                    for (int frame = 0;frame < frameCount;frame++)
+                    for (int fi = 0;fi < frameCount;fi++)
                     {
+                        int framePos = frames[fi];
+
                         // Copy pixel data
-                        Graphics.CopyTexture(tex, 0, 0, 0, (frameCount - 1 - frame) * frameSize, frameSize, frameSize,
-                                rearranged, 0, 0, (frame % framePerRow) * frameSize, (framePerCol - 1 - frame / framePerRow) * frameSize);
+                        Graphics.CopyTexture(tex, 0, 0, 0, (spriteCount - 1 - framePos) * frameSize, frameSize, frameSize,
+                                rearranged, 0, 0, (fi % framePerRow) * frameSize, (framePerCol - 1 - fi / framePerRow) * frameSize);
                         
                     }
 

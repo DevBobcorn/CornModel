@@ -1,9 +1,9 @@
 #ifndef CORN_FUNCTIONS_INCLUDED
 #define CORN_FUNCTIONS_INCLUDED
 
-void GetTexUV_float(float AnimTime, float4 AnimInfo, float4 BaseUV, out float2 TexUV, out float TexIndex)
+void GetTexUVOffset_float(float AnimTime, float4 AnimInfo, out float2 TexUVOffset)
 {
-    float frameCount = AnimInfo.x;
+    uint frameCount = round(AnimInfo.x);
 
     if (frameCount > 1) {
         float frameInterval = AnimInfo.y;
@@ -12,13 +12,10 @@ void GetTexUV_float(float AnimTime, float4 AnimInfo, float4 BaseUV, out float2 T
         uint curFrame = floor(cycleTime / frameInterval);
         uint framePerRow = round(AnimInfo.w);
         
-        TexUV = float2(BaseUV.x + (curFrame % framePerRow) * AnimInfo.z,
-                BaseUV.y - (curFrame / framePerRow) * AnimInfo.z);
+        TexUVOffset = float2((curFrame % framePerRow) * AnimInfo.z, (curFrame / framePerRow) * -AnimInfo.z);
     } else {
-        TexUV = BaseUV.xy;
+        TexUVOffset = float2(0, 0);
     }
-
-    TexIndex = BaseUV.z;
 }
 
 #endif
