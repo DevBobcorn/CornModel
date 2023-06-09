@@ -260,7 +260,7 @@ namespace MinecraftClient.Resource
             var info = GetTextureInfo(identifier);
             if (info.frameCount > 1) // This texture is animated
             {
-                float oneX = info.bounds.width / info.framePerRow;
+                float oneX = info.bounds.width / info.framePerRow; // Frame size on texture atlas array
 
                 return (GetUVsAt(info.bounds, info.index, oneX, oneX, part, areaRot),
                         new(info.frameCount, info.frameInterval, oneX, info.framePerRow));
@@ -319,12 +319,13 @@ namespace MinecraftClient.Resource
             public int framePerRow;
             public int frameCount;
             public float frameInterval;
-
-            public TextureAnimationInfo(int f, int fRow, float i)
+            public bool interpolate;
+            public TextureAnimationInfo(int f, int fRow, float i, bool itpl)
             {
                 frameCount = f;
                 framePerRow = fRow;
                 frameInterval = i;
+                interpolate = itpl;
             }
         }
 
@@ -364,6 +365,13 @@ namespace MinecraftClient.Resource
                         frameInterval = int.Parse(animJson.Properties["frametime"].StringValue) * 0.05F;
                     else // Use default frame interval
                         frameInterval = 0.05F;
+                    
+                    bool interpolate;
+
+                    if (animJson.Properties.ContainsKey("interpolate"))
+                        interpolate = animJson.Properties["interpolate"].StringValue.ToLower().Equals("true");
+                    else
+                        interpolate = false;
 
                     int frameSize = tex.width;
                     
@@ -385,7 +393,7 @@ namespace MinecraftClient.Resource
                         
                     }
 
-                    return (rearranged, new(frameCount, framePerRow, frameInterval));
+                    return (rearranged, new(frameCount, framePerRow, frameInterval, interpolate));
 
                 }
             }
@@ -527,8 +535,8 @@ namespace MinecraftClient.Resource
                     if (curAnimInfo is null)
                         texAtlasTable.Add(ids[curTexIndex + i], new(rects[i], curAtlasIndex));
                     else
-                        texAtlasTable.Add(ids[curTexIndex + i], new(rects[i], curAtlasIndex,
-                                curAnimInfo.frameCount, rects[i].width / curAnimInfo.framePerRow, curAnimInfo.framePerRow, curAnimInfo.frameInterval));
+                        texAtlasTable.Add(ids[curTexIndex + i], new(rects[i], curAtlasIndex, curAnimInfo.frameCount,
+                                rects[i].width / curAnimInfo.framePerRow, curAnimInfo.framePerRow, curAnimInfo.interpolate, curAnimInfo.frameInterval));
                 }
 
                 curTexIndex += consumedTexCount;
