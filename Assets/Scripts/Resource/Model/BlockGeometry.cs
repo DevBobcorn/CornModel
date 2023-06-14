@@ -180,7 +180,7 @@ namespace MinecraftClient.Resource
             {
                 var dir = (CullDir) (dirIdx + 1);
 
-                if ((cullFlags & (1 << 0)) != 0 && vertexArrs[dir].Length > 0)
+                if ((cullFlags & (1 << dirIdx)) != 0 && vertexArrs[dir].Length > 0)
                 {
                     for (i = 0U;i < vertexArrs[dir].Length;i++)
                         verts[i + vertOffset] = vertexArrs[dir][i] + posOffset;
