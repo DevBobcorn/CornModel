@@ -3,10 +3,9 @@ using Unity.Mathematics;
 namespace MinecraftClient.Mapping
 {
     /// <summary>
-    /// Represents a Minecraft World
-    /// Placeholder in this project
+    /// Represents a World
     /// </summary>
-    public class World
+    public abstract class AbstractWorld
     {
         // Using biome colors of minecraft:plains as default
         // See https://minecraft.fandom.com/wiki/Plains
@@ -14,11 +13,11 @@ namespace MinecraftClient.Mapping
         public static readonly float3 DEFAULT_GRASS   = new float3(145, 189, 89) / 255F;
         public static readonly float3 DEFAULT_WATER   = new float3(63, 118, 228) / 255F;
 
-        public float3 GetFoliageColor(Location loc) => DEFAULT_FOLIAGE;
+        public virtual float3 GetFoliageColor(Location loc) => DEFAULT_FOLIAGE;
 
-        public float3 GetGrassColor(Location loc) => DEFAULT_GRASS;
+        public virtual float3 GetGrassColor(Location loc) => DEFAULT_GRASS;
 
-        public float3 GetWaterColor(Location loc) => DEFAULT_WATER;
+        public virtual float3 GetWaterColor(Location loc) => DEFAULT_WATER;
 
     }
 }

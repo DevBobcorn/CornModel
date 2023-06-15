@@ -26,7 +26,7 @@ public class Test : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     public static void InitializeApp() => Loom.Initialize();
 
-    public void TestBuildState(string name, int stateId, BlockState state, BlockStateModel stateModel, int cullFlags, World world, float3 pos)
+    public void TestBuildState(string name, int stateId, BlockState state, BlockStateModel stateModel, int cullFlags, AbstractWorld world, float3 pos)
     {
         int altitude = 0;
         foreach (var model in stateModel.Geometries)
@@ -275,6 +275,8 @@ public class Test : MonoBehaviour
         }
     
     }
+
+    class World : AbstractWorld { }
 
     private IEnumerator DoBuild(string dataVersion, string resourceVersion, string[] resourceOverrides, int itemPrecision)
     {
