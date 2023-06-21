@@ -31,49 +31,6 @@ namespace MinecraftClient.Rendering
             return atlasMaterials.GetValueOrDefault(renderType, defaultAtlasMaterial!);
         }
 
-        public void LoadPlayerSkins()
-        {
-            Debug.Log("Loading player skin textures...");
-            // Clear loaded things...
-            skinTextures.Clear();
-            skinMaterials.Clear();
-
-            var skinPath = PathHelper.GetPackDirectoryNamed("skins");
-            var skinDir = new DirectoryInfo(skinPath);
-
-            if (skinDir.Exists)
-            {
-                var skinFiles = skinDir.GetFiles();
-
-                foreach (var skinFile in skinFiles)
-                {
-                    if (skinFile.Extension == ".png")
-                    {
-                        // Take the file base name in lower case as skin owner's name
-                        var nameLower = skinFile.Name[..^4].ToLower();
-                        Debug.Log($"Loading skin for [{nameLower}]");
-
-                        var skin = new Texture2D(2, 2);
-
-                        skin.LoadImage(File.ReadAllBytes(skinFile.FullName));
-                        skin.filterMode = FilterMode.Point;
-
-                        skinTextures.Add(nameLower, skin);
-
-                        // Clone a new skin material
-                        var newSkinMat = new Material(PlayerSkin);
-                        newSkinMat.SetTexture("_BaseMap", skin);
-
-                        skinMaterials.Add(nameLower, newSkinMat);
-
-                    }
-                    else
-                        Debug.LogWarning($"Unexpected skin texture format {skinFile.Extension}, should be png format");
-                    
-                }
-            }
-        }
-
         public void EnsureInitialized()
         {
             if (!initialized) Initialize();
@@ -107,9 +64,6 @@ namespace MinecraftClient.Rendering
 
             // Water
             atlasMaterials.Add(RenderType.WATER, translucent);
-
-            // Player Skins
-            LoadPlayerSkins();
 
             initialized = true;
 
