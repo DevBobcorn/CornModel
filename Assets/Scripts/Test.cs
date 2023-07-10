@@ -68,7 +68,7 @@ public class Test : MonoBehaviour
             var vertAttrs = new NativeArray<VertexAttributeDescriptor>(4, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             vertAttrs[0] = new(VertexAttribute.Position,  dimension: 3, stream: 0);
             vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 3, stream: 1);
-            vertAttrs[2] = new(VertexAttribute.TexCoord1, dimension: 4, stream: 2);
+            vertAttrs[2] = new(VertexAttribute.TexCoord3, dimension: 4, stream: 2);
             vertAttrs[3] = new(VertexAttribute.Color,     dimension: 3, stream: 3);
 
             // Set mesh params
@@ -209,7 +209,7 @@ public class Test : MonoBehaviour
             var vertAttrs = new NativeArray<VertexAttributeDescriptor>(4, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             vertAttrs[0] = new(VertexAttribute.Position,  dimension: 3, stream: 0);
             vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 3, stream: 1);
-            vertAttrs[2] = new(VertexAttribute.TexCoord1, dimension: 4, stream: 2);
+            vertAttrs[2] = new(VertexAttribute.TexCoord3, dimension: 4, stream: 2);
             vertAttrs[3] = new(VertexAttribute.Color,     dimension: 3, stream: 3);
 
             // Set mesh params
