@@ -3,20 +3,19 @@ using TMPro;
 
 public class Viewer : MonoBehaviour
 {
-    public float sensitivityX = 5F;
-    public float sensitivityY = 5F;
-
-    public float moveSpeed = 5F;
-
-    public TMP_Text viewerText;
-
-    void Start()
-    {
-        Cursor.lockState = CursorLockMode.Locked;
-    }
+    [SerializeField] public float sensitivityX = 5F;
+    [SerializeField] public float sensitivityY = 5F;
+    [SerializeField] public float moveSpeed = 5F;
+    [SerializeField] private TMP_Text viewerText;
+    [SerializeField] private Test game;
 
     void Update()
     {
+        if (game != null && game.IsPaused)
+        {
+            return;
+        }
+
         float x = Input.GetAxis("Mouse X");
         float y = Input.GetAxis("Mouse Y");
 
