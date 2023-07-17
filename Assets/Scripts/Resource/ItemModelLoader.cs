@@ -43,13 +43,13 @@ namespace MinecraftClient.Resource
                     elem.to   = new(8F + halfThick, 16F, 16F);
 
                     elem.faces.Add(FaceDir.NORTH, new() {
-                        uv = new(0F, 0F, 16F, 16F),
+                        uv = new(16F, 0F, 0F, 16F),
                         texName = layerTexName,
                         tintIndex = useItemColor ? layer : -1
                     });
 
                     elem.faces.Add(FaceDir.SOUTH, new() {
-                        uv = new(16F, 0F, 0F, 16F),
+                        uv = new(0F, 0F, 16F, 16F),
                         texName = layerTexName,
                         tintIndex = useItemColor ? layer : -1
                     });
@@ -71,25 +71,25 @@ namespace MinecraftClient.Resource
 
                         // Left faces
                         vertStripe.faces.Add(FaceDir.EAST, new() {
-                            uv = new(fracL1,       0F,       fracR1, 16F),
+                            uv = new(16F - fracR1, 0F, 16F - fracL1, 16F),
                             texName = layerTexName,
                             tintIndex = useItemColor ? layer : -1
                         });
                         // Right faces
                         vertStripe.faces.Add(FaceDir.WEST, new() {
-                            uv = new(16F - fracL2, 0F, 16F - fracR2, 16F),
+                            uv = new(      fracR2, 0F,       fracL2, 16F),
                             texName = layerTexName,
                             tintIndex = useItemColor ? layer : -1
                         });
                         // Top faces
                         horzStripe.faces.Add(FaceDir.UP, new() {
-                            uv = new(16F,       fracL1, 0F,       fracR1),
+                            uv = new(0F,       fracL1, 16F,       fracR1),
                             texName = layerTexName,
                             tintIndex = useItemColor ? layer : -1
                         });
                         // Bottom faces
                         horzStripe.faces.Add(FaceDir.DOWN, new() {
-                            uv = new(16F, 16F - fracL2, 0F, 16F - fracR2),
+                            uv = new(0F, 16F - fracL2, 16F, 16F - fracR2),
                             texName = layerTexName,
                             tintIndex = useItemColor ? layer : -1
                         });
