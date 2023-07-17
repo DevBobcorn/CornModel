@@ -103,7 +103,7 @@ namespace MinecraftClient.Resource
                     var elemData = modelData.Properties["elements"].DataArray;
                     foreach (var elemItem in elemData)
                     {
-                        model.Elements.Add(JsonModelElement.fromJson(elemItem));
+                        model.Elements.Add(JsonModelElement.FromJson(elemItem));
                     }
                 }
 
