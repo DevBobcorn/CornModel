@@ -20,9 +20,17 @@ public class Test : MonoBehaviour
     public const int WINDOWED_APP_WIDTH = 1600, WINDOWED_APP_HEIGHT = 900;
     private static readonly byte[] FLUID_HEIGHTS = new byte[] { 15, 15, 15, 15, 15, 15, 15, 15, 15 };
 
+    private static readonly float3 ITEM_CENTER = new(-0.5F, -0.5F, -0.5F);
+
     [SerializeField] public TMP_Text InfoText;
     [SerializeField] public Animator CrosshairAnimator;
     [SerializeField] public MaterialManager MaterialManager;
+
+    [SerializeField] public RectTransform inventory;
+    [SerializeField] public GameObject inventoryItemPrefab;
+    [SerializeField] public int[] InventoryBuildList = { };
+
+    private bool loaded = false;
 
     // Runs before a scene gets loaded
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -33,7 +41,7 @@ public class Test : MonoBehaviour
         int altitude = 0;
         foreach (var model in stateModel.Geometries)
         {
-            var coord = pos + new int3(0, altitude, 0);
+            var coord = pos + new float3(0F, -altitude * 1.2F, 0F);
             var loc = new Location(coord.z, coord.y, coord.x);
 
             var modelObject = new GameObject(name);
@@ -132,17 +140,11 @@ public class Test : MonoBehaviour
                 }, MeshUpdateFlags.DontRecalculateBounds);
             }
 
-            var mesh = new Mesh
-            {
-                bounds = bounds,
-                name = "Proc Mesh"
-            };
-
+            // Create and assign mesh
+            var mesh = new Mesh { bounds = bounds };
             Mesh.ApplyAndDisposeWritableMeshData(meshDataArr, mesh);
-
             // Recalculate mesh normals
             mesh.RecalculateNormals();
-
             filter.sharedMesh   = mesh;
             collider.sharedMesh = mesh;
 
@@ -157,8 +159,7 @@ public class Test : MonoBehaviour
             else
                 render.sharedMaterial = MaterialManager.GetAtlasMaterial(stateModel.RenderType);
 
-            altitude -= 2;
-
+            altitude += 1;
         }
 
     }
@@ -175,7 +176,7 @@ public class Test : MonoBehaviour
         int altitude = 0;
         foreach (var pair in buildDict)
         {
-            var coord = pos + new int3(0, altitude, 0);
+            var coord = pos + new float3(0F, -altitude * 1.2F, 0F);
 
             var modelObject = new GameObject(pair.Key == ItemModelPredicate.EMPTY ? name : $"{name}{pair.Key}");
             modelObject.transform.parent = transform;
@@ -256,26 +257,142 @@ public class Test : MonoBehaviour
                 vertexCount = vertexCount
             }, MeshUpdateFlags.DontRecalculateBounds);
 
-            var mesh = new Mesh
-            {
-                bounds = bounds,
-                name = "Proc Mesh"
-            };
-
+            // Create and assign mesh
+            var mesh = new Mesh { bounds = bounds };
             Mesh.ApplyAndDisposeWritableMeshData(meshDataArr, mesh);
-
             // Recalculate mesh normals
             mesh.RecalculateNormals();
-
             filter.sharedMesh   = mesh;
             collider.sharedMesh = mesh;
 
             render.sharedMaterial = MaterialManager.GetAtlasMaterial(itemModel.RenderType);
 
-            altitude += 2;
-
+            altitude += 1;
         }
     
+    }
+
+    public void TestBuildInventoryItem(string name, int itemNumId, ItemStack itemStack, ItemModel itemModel)
+    {
+        var invItemObj = GameObject.Instantiate(inventoryItemPrefab);
+        invItemObj.name = name;
+        invItemObj.GetComponent<RectTransform>().SetParent(inventory, false);
+
+        var filter = invItemObj.GetComponentInChildren<MeshFilter>();
+        var modelObject = filter.gameObject;
+
+        var render = modelObject.GetComponent<MeshRenderer>();
+        var itemGeometry = itemModel.Geometry;
+
+        // Handle GUI display transform
+        float3x3 t;
+        bool hasGUITransform = itemGeometry.DisplayTransforms.TryGetValue(DisplayPosition.GUI, out t);
+        // Make use of the debug text
+        invItemObj.GetComponentInChildren<TMP_Text>().text = hasGUITransform ? $"{t.c1.x} {t.c1.y} {t.c1.z}" : string.Empty;
+
+        if (hasGUITransform) // Apply specified local transform
+        {
+            // Apply local translation, '1' in translation field means 0.1 unit in local space, so multiply with 0.1
+            modelObject.transform.localPosition = t.c0 * 0.1F;
+            // Apply local rotation
+            modelObject.transform.localEulerAngles = Vector3.zero;
+            // - MC ROT X
+            modelObject.transform.Rotate(Vector3.back, t.c1.x, Space.Self);
+            // - MC ROT Y
+            modelObject.transform.Rotate(Vector3.down, t.c1.y, Space.Self);
+            // - MC ROT Z
+            modelObject.transform.Rotate(Vector3.left, t.c1.z, Space.Self);
+            // Apply local scale
+            modelObject.transform.localScale = t.c2;
+        }
+        else // Apply uniform local transform
+        {
+            // Apply local translation, set to zero
+            modelObject.transform.localPosition = Vector3.zero;
+            // Apply local rotation
+            modelObject.transform.localEulerAngles = Vector3.zero;
+            // Apply local scale
+            modelObject.transform.localScale = Vector3.one;
+        }
+
+        // Make and set mesh...
+        var visualBuffer = new VertexBuffer();
+
+        int fluidVertexCount = visualBuffer.vert.Length;
+        int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
+
+        float3[] colors;
+
+        var tintFunc = ItemPalette.INSTANCE.GetTintRule(itemNumId);
+        if (tintFunc is null)
+            colors = new float3[]{ new(1F, 0F, 0F), new(0F, 0F, 1F), new(0F, 1F, 0F) };
+        else
+            colors = tintFunc.Invoke(itemStack);
+
+        itemGeometry.Build(ref visualBuffer, ITEM_CENTER, colors);
+
+        int vertexCount = visualBuffer.vert.Length;
+        int triIdxCount = (vertexCount / 2) * 3;
+
+        var meshDataArr = Mesh.AllocateWritableMeshData(1);
+        var meshData = meshDataArr[0];
+
+        var vertAttrs = new NativeArray<VertexAttributeDescriptor>(4, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+        vertAttrs[0] = new(VertexAttribute.Position,  dimension: 3, stream: 0);
+        vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 3, stream: 1);
+        vertAttrs[2] = new(VertexAttribute.TexCoord3, dimension: 4, stream: 2);
+        vertAttrs[3] = new(VertexAttribute.Color,     dimension: 3, stream: 3);
+
+        // Set mesh params
+        meshData.SetVertexBufferParams(vertexCount, vertAttrs);
+        vertAttrs.Dispose();
+
+        meshData.SetIndexBufferParams(triIdxCount, IndexFormat.UInt32);
+
+        // Set vertex data
+        // Positions
+        var positions = meshData.GetVertexData<float3>(0);
+        positions.CopyFrom(visualBuffer.vert);
+        // Tex Coordinates
+        var texCoords = meshData.GetVertexData<float3>(1);
+        texCoords.CopyFrom(visualBuffer.txuv);
+        // Animation Info
+        var animInfos = meshData.GetVertexData<float4>(2);
+        animInfos.CopyFrom(visualBuffer.uvan);
+        // Vertex colors
+        var vertColors = meshData.GetVertexData<float3>(3);
+        vertColors.CopyFrom(visualBuffer.tint);
+
+        // Set face data
+        var triIndices = meshData.GetIndexData<uint>();
+        uint vi = 0; int ti = 0;
+        for (;vi < vertexCount;vi += 4U, ti += 6)
+        {
+            triIndices[ti]     = vi;
+            triIndices[ti + 1] = vi + 3U;
+            triIndices[ti + 2] = vi + 2U;
+            triIndices[ti + 3] = vi;
+            triIndices[ti + 4] = vi + 1U;
+            triIndices[ti + 5] = vi + 3U;
+        }
+
+        var bounds = new Bounds(new Vector3(0.5F, 0.5F, 0.5F), new Vector3(1F, 1F, 1F));
+
+        meshData.subMeshCount = 1;
+        meshData.SetSubMesh(0, new SubMeshDescriptor(0, triIdxCount)
+        {
+            bounds = bounds,
+            vertexCount = vertexCount
+        }, MeshUpdateFlags.DontRecalculateBounds);
+
+        // Create and assign mesh
+        var mesh = new Mesh { bounds = bounds };
+        Mesh.ApplyAndDisposeWritableMeshData(meshDataArr, mesh);
+        // Recalculate mesh normals
+        mesh.RecalculateNormals();
+        filter.sharedMesh = mesh;
+
+        render.sharedMaterial = MaterialManager.GetAtlasMaterial(itemModel.RenderType);
     }
 
     class World : AbstractWorld { }
@@ -308,6 +425,9 @@ public class Test : MonoBehaviour
         Task.Run(() => packManager.LoadPacks(loadFlag,
                 (status) => Loom.QueueOnMainThread(() => InfoText.text = status)));
         while (!loadFlag.Finished) yield return null;
+
+        // Loading complete!
+        loaded = true;
         
         // Create a dummy world as provider of block colors
         var world = new World();
@@ -316,7 +436,6 @@ public class Test : MonoBehaviour
 
         int start = 0, limit = 4096;
         int count = 0, width = 64;
-        
         foreach (var pair in packManager.StateModelTable)
         {
             int index = count - start;
@@ -324,7 +443,7 @@ public class Test : MonoBehaviour
             {
                 var state = BlockStatePalette.INSTANCE.StatesTable[pair.Key];
 
-                TestBuildState($"Block [{pair.Key}] {state}", pair.Key, state, pair.Value, 0b111111, world, new((index % width) * 2, 0, (index / width) * 2));
+                TestBuildState($"Block [{pair.Key}] {state}", pair.Key, state, pair.Value, 0b111111, world, new((index % width) * 1.2F, 0, (index / width) * 1.2F));
             }
 
             count++;
@@ -334,7 +453,6 @@ public class Test : MonoBehaviour
         }
 
         count = 0; width = 32;
-
         foreach (var pair in packManager.ItemModelTable)
         {
             int index = count - start;
@@ -343,7 +461,7 @@ public class Test : MonoBehaviour
                 var item = ItemPalette.INSTANCE.ItemsTable[pair.Key];
                 var itemStack = new ItemStack(item, 1, null);
 
-                TestBuildItem($"Item [{pair.Key}] {item}", pair.Key, itemStack, pair.Value, new((index % width) * 2, 20, (index / width) * 2));
+                TestBuildItem($"Item [{pair.Key}] {item}", pair.Key, itemStack, pair.Value, new(-(index % width) * 1.5F - 1.5F, 0F, (index / width) * 1.5F));
             }
 
             count++;
@@ -353,7 +471,7 @@ public class Test : MonoBehaviour
 
         }
 
-        InfoText.text = $"Voxel meshes built in {Time.realtimeSinceStartup - startTime} seconds.";
+        InfoText.text = $"Meshes built in {Time.realtimeSinceStartup - startTime} second(s).";
     }
 
     void Start()
@@ -400,6 +518,36 @@ public class Test : MonoBehaviour
             IsPaused = !IsPaused;
         }
 
+        if (Input.GetKeyDown(KeyCode.Q)) // Rebuild inventory items
+        {
+            if (!loaded)
+            {
+                Debug.LogWarning($"Resource loading in progress, please wait...");
+                return;
+            }
+
+            var items = new List<Transform>();
+            foreach (Transform item in inventory.transform)
+            {
+                items.Add(item);
+            }
+            
+            foreach (var item in items)
+            {
+                Destroy(item.gameObject);
+            }
+
+            var packManager = ResourcePackManager.Instance;
+
+            foreach (var itemNumId in InventoryBuildList)
+            {
+                var item = ItemPalette.INSTANCE.ItemsTable[itemNumId];
+                var itemStack = new ItemStack(item, 1, null);
+
+                TestBuildInventoryItem($"Item [{itemNumId}] {item}", itemNumId, itemStack, packManager.ItemModelTable[itemNumId]);
+            }
+        }
+
         if (Input.GetKeyDown(KeyCode.F11)) // Toggle full screen
         {
             if (Screen.fullScreen)
@@ -413,7 +561,6 @@ public class Test : MonoBehaviour
                 Screen.SetResolution(maxRes.width, maxRes.height, true);
                 Screen.fullScreen = true;
             }
-            
         }
     }
 }
