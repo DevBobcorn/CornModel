@@ -166,10 +166,11 @@ public class Test : MonoBehaviour
 
     public void TestBuildItem(string name, int itemNumId, ItemStack itemStack, ItemModel itemModel, float3 pos)
     {
-        Dictionary<ItemModelPredicate, ItemGeometry> buildDict = new();
-
         // Gather all geometries of this model
-        buildDict.Add(ItemModelPredicate.EMPTY, itemModel.Geometry);
+        Dictionary<ItemModelPredicate, ItemGeometry> buildDict = new()
+        {
+            { ItemModelPredicate.EMPTY, itemModel.Geometry }
+        };
         foreach (var pair in itemModel.Overrides)
             buildDict.TryAdd(pair.Key, pair.Value);
 
@@ -195,7 +196,7 @@ public class Test : MonoBehaviour
 
             float3[] colors;
 
-            var tintFunc = ItemPalette.INSTANCE.GetTintRule(itemNumId);
+            var tintFunc = ItemPalette.INSTANCE.GetTintRule(itemStack.ItemType.ItemId);
             if (tintFunc is null)
                 colors = new float3[]{ new(1F, 0F, 0F), new(0F, 0F, 1F), new(0F, 1F, 0F) };
             else
@@ -272,7 +273,7 @@ public class Test : MonoBehaviour
     
     }
 
-    public void TestBuildInventoryItem(string name, int itemNumId, ItemStack itemStack, ItemModel itemModel)
+    public void TestBuildInventoryItem(string name, ItemStack itemStack, ItemModel itemModel)
     {
         var invItemObj = GameObject.Instantiate(inventoryItemPrefab);
         invItemObj.name = name;
@@ -285,8 +286,7 @@ public class Test : MonoBehaviour
         var itemGeometry = itemModel.Geometry;
 
         // Handle GUI display transform
-        float3x3 t;
-        bool hasGUITransform = itemGeometry.DisplayTransforms.TryGetValue(DisplayPosition.GUI, out t);
+        bool hasGUITransform = itemGeometry.DisplayTransforms.TryGetValue(DisplayPosition.GUI, out float3x3 t);
         // Make use of the debug text
         invItemObj.GetComponentInChildren<TMP_Text>().text = hasGUITransform ? $"{t.c1.x} {t.c1.y} {t.c1.z}" : string.Empty;
 
@@ -323,7 +323,7 @@ public class Test : MonoBehaviour
 
         float3[] colors;
 
-        var tintFunc = ItemPalette.INSTANCE.GetTintRule(itemNumId);
+        var tintFunc = ItemPalette.INSTANCE.GetTintRule(itemStack.ItemType.ItemId);
         if (tintFunc is null)
             colors = new float3[]{ new(1F, 0F, 0F), new(0F, 0F, 1F), new(0F, 1F, 0F) };
         else
@@ -544,7 +544,7 @@ public class Test : MonoBehaviour
                 var item = ItemPalette.INSTANCE.ItemsTable[itemNumId];
                 var itemStack = new ItemStack(item, 1, null);
 
-                TestBuildInventoryItem($"Item [{itemNumId}] {item}", itemNumId, itemStack, packManager.ItemModelTable[itemNumId]);
+                TestBuildInventoryItem($"Item [{itemNumId}] {item}", itemStack, packManager.ItemModelTable[itemNumId]);
             }
         }
 
