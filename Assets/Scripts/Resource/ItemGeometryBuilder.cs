@@ -99,7 +99,7 @@ namespace MinecraftClient.Resource
                         break;
                 }
 
-                ResourceLocation texIdentifier = model.resolveTextureName(face.texName);
+                ResourceLocation texIdentifier = model.ResolveTextureName(face.texName);
 
                 var uvInfo = ResourcePackManager.Instance.GetUVs(texIdentifier, face.uv / MC_UV_SCALE, 0);
                 var remappedUVs = uvInfo.uvs;

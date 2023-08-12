@@ -13,11 +13,11 @@ namespace MinecraftClient.Resource
         public readonly List<JsonModelElement> Elements = new();
         public readonly Dictionary<DisplayPosition, float3x3> DisplayTransforms = new();
 
-        public ResourceLocation resolveTextureName(string texName)
+        public ResourceLocation ResolveTextureName(string texName)
         {
             if (Textures.ContainsKey(texName))
             {
-                return resolveTextureRef(Textures[texName]);
+                return ResolveTextureRef(Textures[texName]);
             }
 
             // Might be templates who have place holder textures...
@@ -25,7 +25,7 @@ namespace MinecraftClient.Resource
             return ResourceLocation.INVALID;
         }
 
-        public ResourceLocation resolveTextureRef(TextureReference texRef)
+        public ResourceLocation ResolveTextureRef(TextureReference texRef)
         {
             int depth = 0;
             while (texRef.isPointer)

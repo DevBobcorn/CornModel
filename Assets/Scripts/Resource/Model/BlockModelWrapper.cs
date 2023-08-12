@@ -16,7 +16,7 @@ namespace MinecraftClient.Resource
             this.uvlock = uvlock;
         }
 
-        public static BlockModelWrapper fromJson(ResourcePackManager manager, Json.JSONData data)
+        public static BlockModelWrapper FromJson(ResourcePackManager manager, Json.JSONData data)
         {
             if (data.Properties.ContainsKey("model"))
             {

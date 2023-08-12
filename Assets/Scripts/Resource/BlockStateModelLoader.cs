@@ -54,12 +54,12 @@ namespace MinecraftClient.Resource
                 {
                     foreach (var wrapperData in variant.Value.DataArray)
                     {
-                        results.Add(new BlockGeometryBuilder(BlockModelWrapper.fromJson(manager, wrapperData)).Build());
+                        results.Add(new BlockGeometryBuilder(BlockModelWrapper.FromJson(manager, wrapperData)).Build());
                     }
                 }
                 else // Only a single item...
                 {
-                    results.Add(new BlockGeometryBuilder(BlockModelWrapper.fromJson(manager, variant.Value)).Build());
+                    results.Add(new BlockGeometryBuilder(BlockModelWrapper.FromJson(manager, variant.Value)).Build());
                 }
 
                 foreach (var stateId in BlockStatePalette.INSTANCE.StateListTable[blockId])
@@ -97,11 +97,11 @@ namespace MinecraftClient.Resource
                     if (part.Properties["apply"].Type == Json.JSONData.DataType.Array)
                     {
                         // Don't really support a list here, just use the first value instead...
-                        partWrapper = BlockModelWrapper.fromJson(manager, part.Properties["apply"].DataArray[0]);
+                        partWrapper = BlockModelWrapper.FromJson(manager, part.Properties["apply"].DataArray[0]);
                     }
                     else
                     {
-                        partWrapper = BlockModelWrapper.fromJson(manager, part.Properties["apply"]);
+                        partWrapper = BlockModelWrapper.FromJson(manager, part.Properties["apply"]);
                     }
 
                     if (part.Properties.ContainsKey("when"))
