@@ -39,5 +39,4 @@ namespace MinecraftClient.Resource
             };
         }
     }
-
 }

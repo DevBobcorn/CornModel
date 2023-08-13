@@ -60,6 +60,5 @@ namespace MinecraftClient.Resource
             Debug.LogWarning("Invalid block model wrapper!");
             return null;
         }
-
     }
 }

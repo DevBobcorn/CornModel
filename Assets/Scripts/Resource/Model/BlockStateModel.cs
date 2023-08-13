@@ -12,7 +12,5 @@ namespace MinecraftClient.Resource
             Geometries = geometries.ToArray();
             RenderType = renderType;
         }
-
     }
-
 }

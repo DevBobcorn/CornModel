@@ -37,9 +37,7 @@ namespace MinecraftClient.Resource
         public bool check(ItemStack itemStack)
         {
             // TODO Implement
-
             return true;
-
         }
 
         public override string ToString()
@@ -57,7 +55,5 @@ namespace MinecraftClient.Resource
             }
             else return "{}";
         }
-
     }
-
 }

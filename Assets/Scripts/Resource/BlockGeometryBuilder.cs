@@ -180,7 +180,6 @@ namespace MinecraftClient.Resource
                 // Increament vertex index offset of this cull direction
                 vertIndexOffset[cullDir] += 4; // Four vertices per quad
             }
-
         }
 
         private static Dictionary<int2, Dictionary<FaceDir, int>> CreateUVLockMap()

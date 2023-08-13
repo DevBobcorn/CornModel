@@ -161,7 +161,7 @@ namespace MinecraftClient.Resource
                     var renderType =
                         BlockStatePalette.INSTANCE.RenderTypeTable.GetValueOrDefault(blockId, RenderType.SOLID);
 
-                    StateModelLoader.LoadBlockStateModel(this, blockId, BlockStateFileTable[blockId], renderType);
+                    StateModelLoader.LoadBlockStateModel(blockId, BlockStateFileTable[blockId], renderType);
                 }
                 else
                     Debug.LogWarning($"Block state model definition not assigned for {blockId}!");

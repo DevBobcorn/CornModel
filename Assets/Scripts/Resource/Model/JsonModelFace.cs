@@ -71,6 +71,5 @@ namespace MinecraftClient.Resource
 
             return face;
         }
-
     }    
 }

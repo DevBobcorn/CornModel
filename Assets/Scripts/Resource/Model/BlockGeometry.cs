@@ -190,6 +190,5 @@ namespace MinecraftClient.Resource
 
             colliderVerts = verts;
         }
-
     }
 }

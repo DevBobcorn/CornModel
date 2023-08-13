@@ -23,7 +23,5 @@ namespace MinecraftClient.Resource
                 Debug.LogWarning($"Trying to add predicate {predicate} to an item model twice!");
             }
         }
-
     }
-
 }

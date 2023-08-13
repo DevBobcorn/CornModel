@@ -43,7 +43,7 @@ namespace MinecraftClient.Resource
 
                 if (depth > MAXDEPTH)
                 {
-                    Debug.LogWarning("Failed to get texture " + texRef.name + " There might be a reference loop");
+                    Debug.LogWarning($"Failed to get texture {texRef.name}, there might be a reference loop");
                     return ResourceLocation.INVALID;
                 }
 

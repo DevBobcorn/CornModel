@@ -146,7 +146,6 @@ namespace MinecraftClient.Resource
                     tintIndices.Add(face.tintIndex);
                 
             }
-
         }
     }
 }

@@ -16,7 +16,7 @@ namespace MinecraftClient.Resource
             this.manager = manager;
         }
 
-        public void LoadBlockStateModel(ResourcePackManager manager, ResourceLocation blockId, string path, RenderType renderType)
+        public void LoadBlockStateModel(ResourceLocation blockId, string path, RenderType renderType)
         {
             if (File.Exists(path))
             {
@@ -38,7 +38,6 @@ namespace MinecraftClient.Resource
             }
             else
                 Debug.LogWarning("Cannot find block state model file: " + path);
-
         }
 
         private void LoadVariantsFormat(Dictionary<string, Json.JSONData> variants, ResourceLocation blockId, RenderType renderType, ResourcePackManager manager)
@@ -70,13 +69,9 @@ namespace MinecraftClient.Resource
                     {
                         // Then this block state belongs to the current variant...
                         manager.StateModelTable.Add(stateId, new(results, renderType));
-
                     }
-
                 }
-
             }
-
         }
 
         private void LoadMultipartFormat(List<Json.JSONData> parts, ResourceLocation blockId, RenderType renderType, ResourcePackManager manager)
@@ -126,9 +121,7 @@ namespace MinecraftClient.Resource
 
                                 if (apply) // Apply this part to the current state
                                     buildersList[stateId].AppendWrapper(partWrapper);
-
                             }
-
                         }
                         else // 'when' is only a single predicate...
                         {
@@ -138,7 +131,6 @@ namespace MinecraftClient.Resource
                                 // Check and apply...
                                 if (BlockStatePredicate.fromJson(whenData).check(BlockStatePalette.INSTANCE.StatesTable[stateId]))
                                     buildersList[stateId].AppendWrapper(partWrapper);
-
                             }
                         }
                     }
@@ -146,11 +138,8 @@ namespace MinecraftClient.Resource
                     {
                         foreach (var stateItem in buildersList) // For each state
                             buildersList[stateItem.Key].AppendWrapper(partWrapper);
-
                     }
-
                 }
-
             }
 
             // Get the table into manager...
@@ -158,8 +147,6 @@ namespace MinecraftClient.Resource
             {
                 manager.StateModelTable.Add(resultItem.Key, new(new BlockGeometry[]{ resultItem.Value.Build() }.ToList(), renderType));
             }
-
         }
     }
-
 }

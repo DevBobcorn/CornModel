@@ -21,23 +21,48 @@ namespace MinecraftClient.Resource
 
         private static Dictionary<Axis, float3> MakeAxisVectors()
         {
-            var vectors = new Dictionary<Axis, float3>();
-            vectors.Add(Axis.X, Vector3.right);   // 1, 0, 0
-            vectors.Add(Axis.Y, Vector3.up);      // 0, 1, 0
-            vectors.Add(Axis.Z, Vector3.forward); // 0, 0, 1
+            var vectors = new Dictionary<Axis, float3>
+            {
+                { Axis.X, Vector3.right },   // 1, 0, 0
+                { Axis.Y, Vector3.up },      // 0, 1, 0
+                { Axis.Z, Vector3.forward }  // 0, 0, 1
+            };
             return vectors;
+        }
+
+        // For Bedrock Edition Entity models
+        public static void RotateVertices(ref float3[] original, float3 pivot, float3 degrees, float downScale = 1F, int startIndex = 0)
+        {
+            // Set up rotation quaternion...
+            Quaternion rot = Quaternion.Euler(degrees);
+
+            // And rotate vertices...
+            for (int i = startIndex;i < original.Length;i++)
+            {
+                var offset = original[i] - pivot;
+
+                if (downScale == 1F)
+                {
+                    original[i] = (float3)(rot * offset) + pivot;
+                }
+                else
+                {
+                    original[i] = ((float3)(rot * offset) + pivot) / downScale;
+                }
+            }
         }
 
         public static Dictionary<Axis, float3> axisVectors = MakeAxisVectors();
 
-        public static void RotateVertices(ref float3[] original, float3 pivot, Axis axis, float degrees, bool rescale)
+        // For Java Edition Block/Item models
+        public static void RotateVertices(ref float3[] original, float3 pivot, Axis axis, float degree, bool rescale)
         {
             // Set up rotation quaternion...
             Quaternion rot = axis switch
             {
-                Axis.X => Quaternion.Euler(degrees, 0F, 0F),
-                Axis.Y => Quaternion.Euler(0F, degrees, 0F),
-                Axis.Z => Quaternion.Euler(0F, 0F, degrees),
+                Axis.X => Quaternion.Euler(degree, 0F, 0F),
+                Axis.Y => Quaternion.Euler(0F, degree, 0F),
+                Axis.Z => Quaternion.Euler(0F, 0F, degree),
                 _      => Quaternion.identity
             };
 
@@ -47,8 +72,7 @@ namespace MinecraftClient.Resource
                 var offset = original[i] - pivot;
                 if (rescale)
                 {
-                    var scaleFrac = 1F / Mathf.Cos(Mathf.Deg2Rad * degrees);
-                    //Debug.Log("Rescaling... axis :" + axis + ", " + scaleFrac);
+                    var scaleFrac = 1F / Mathf.Cos(Mathf.Deg2Rad * degree);
                     switch (axis)
                     {
                         case Axis.X:
@@ -67,11 +91,11 @@ namespace MinecraftClient.Resource
                 }
                 original[i] = (float3)(rot * offset) + pivot; // TODO Make this better
             }
-
         }
 
-        private static float3 ROTCENTER = new float3(0.5F, 0.5F, 0.5F);
+        private static float3 ROTCENTER = new(0.5F, 0.5F, 0.5F);
 
+        // For Java Edition Blockstate models
         public static void RotateWrapper(ref float3[] original, int2 zyRot)
         {
             // Set up rotation quaternion...
@@ -82,9 +106,6 @@ namespace MinecraftClient.Resource
             {
                 original[i] = (float3)(rot * (original[i] - ROTCENTER)) + ROTCENTER; // TODO Make this better
             }
-
         }
-
     }
-
 }
