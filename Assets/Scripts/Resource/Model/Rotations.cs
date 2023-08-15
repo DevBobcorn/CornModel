@@ -30,11 +30,21 @@ namespace MinecraftClient.Resource
             return vectors;
         }
 
+        // By default unity uses z-x-y order for euler angles, while
+        // we use x-y-z order for our bedrock entity models, so we'll
+        // do a bit conversion here
+        public static Quaternion RotationFromEularsXYZ(float3 eularsXYZ)
+        {
+            return Quaternion.AngleAxis(eularsXYZ.x, Vector3.right) *
+                    Quaternion.AngleAxis(eularsXYZ.y, Vector3.up) *
+                    Quaternion.AngleAxis(eularsXYZ.z, Vector3.forward);
+        }
+
         // For Bedrock Edition Entity models
-        public static void RotateVertices(ref float3[] original, float3 pivot, float3 degrees, float downScale = 1F, int startIndex = 0)
+        public static void RotateVertices(ref float3[] original, float3 pivot, float3 eularsXYZ, float downScale = 1F, int startIndex = 0)
         {
             // Set up rotation quaternion...
-            Quaternion rot = Quaternion.Euler(degrees);
+            Quaternion rot = RotationFromEularsXYZ(eularsXYZ);
 
             // And rotate vertices...
             for (int i = startIndex;i < original.Length;i++)

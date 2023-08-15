@@ -15,6 +15,8 @@ using MinecraftClient.Resource;
 using MinecraftClient.Mapping;
 using MinecraftClient.Inventory;
 
+using MinecraftClient.Demo;
+
 public class Test : MonoBehaviour
 {
     public const int WINDOWED_APP_WIDTH = 1600, WINDOWED_APP_HEIGHT = 900;
@@ -161,7 +163,6 @@ public class Test : MonoBehaviour
 
             altitude += 1;
         }
-
     }
 
     public void TestBuildItem(string name, int itemNumId, ItemStack itemStack, ItemModel itemModel, float3 pos)
@@ -191,9 +192,6 @@ public class Test : MonoBehaviour
             // Make and set mesh...
             var visualBuffer = new VertexBuffer();
 
-            int fluidVertexCount = visualBuffer.vert.Length;
-            int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
-
             float3[] colors;
 
             var tintFunc = ItemPalette.INSTANCE.GetTintRule(itemStack.ItemType.ItemId);
@@ -204,73 +202,13 @@ public class Test : MonoBehaviour
 
             pair.Value.Build(ref visualBuffer, float3.zero, colors);
 
-            int vertexCount = visualBuffer.vert.Length;
-            int triIdxCount = (vertexCount / 2) * 3;
-
-            var meshDataArr = Mesh.AllocateWritableMeshData(1);
-            var meshData = meshDataArr[0];
-
-            var vertAttrs = new NativeArray<VertexAttributeDescriptor>(4, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            vertAttrs[0] = new(VertexAttribute.Position,  dimension: 3, stream: 0);
-            vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 3, stream: 1);
-            vertAttrs[2] = new(VertexAttribute.TexCoord3, dimension: 4, stream: 2);
-            vertAttrs[3] = new(VertexAttribute.Color,     dimension: 3, stream: 3);
-
-            // Set mesh params
-            meshData.SetVertexBufferParams(vertexCount, vertAttrs);
-            vertAttrs.Dispose();
-
-            meshData.SetIndexBufferParams(triIdxCount, IndexFormat.UInt32);
-
-            // Set vertex data
-            // Positions
-            var positions = meshData.GetVertexData<float3>(0);
-            positions.CopyFrom(visualBuffer.vert);
-            // Tex Coordinates
-            var texCoords = meshData.GetVertexData<float3>(1);
-            texCoords.CopyFrom(visualBuffer.txuv);
-            // Animation Info
-            var animInfos = meshData.GetVertexData<float4>(2);
-            animInfos.CopyFrom(visualBuffer.uvan);
-            // Vertex colors
-            var vertColors = meshData.GetVertexData<float3>(3);
-            vertColors.CopyFrom(visualBuffer.tint);
-
-            // Set face data
-            var triIndices = meshData.GetIndexData<uint>();
-            uint vi = 0; int ti = 0;
-            for (;vi < vertexCount;vi += 4U, ti += 6)
-            {
-                triIndices[ti]     = vi;
-                triIndices[ti + 1] = vi + 3U;
-                triIndices[ti + 2] = vi + 2U;
-                triIndices[ti + 3] = vi;
-                triIndices[ti + 4] = vi + 1U;
-                triIndices[ti + 5] = vi + 3U;
-            }
-
-            var bounds = new Bounds(new Vector3(0.5F, 0.5F, 0.5F), new Vector3(1F, 1F, 1F));
-
-            meshData.subMeshCount = 1;
-            meshData.SetSubMesh(0, new SubMeshDescriptor(0, triIdxCount)
-            {
-                bounds = bounds,
-                vertexCount = vertexCount
-            }, MeshUpdateFlags.DontRecalculateBounds);
-
-            // Create and assign mesh
-            var mesh = new Mesh { bounds = bounds };
-            Mesh.ApplyAndDisposeWritableMeshData(meshDataArr, mesh);
-            // Recalculate mesh normals
-            mesh.RecalculateNormals();
+            var mesh = VertexBufferBuilder.BuildMesh(visualBuffer);
             filter.sharedMesh   = mesh;
             collider.sharedMesh = mesh;
-
             render.sharedMaterial = MaterialManager.GetAtlasMaterial(itemModel.RenderType);
 
             altitude += 1;
         }
-    
     }
 
     public void TestBuildInventoryItem(string name, ItemStack itemStack, ItemModel itemModel)
@@ -318,9 +256,6 @@ public class Test : MonoBehaviour
         // Make and set mesh...
         var visualBuffer = new VertexBuffer();
 
-        int fluidVertexCount = visualBuffer.vert.Length;
-        int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
-
         float3[] colors;
 
         var tintFunc = ItemPalette.INSTANCE.GetTintRule(itemStack.ItemType.ItemId);
@@ -331,67 +266,7 @@ public class Test : MonoBehaviour
 
         itemGeometry.Build(ref visualBuffer, ITEM_CENTER, colors);
 
-        int vertexCount = visualBuffer.vert.Length;
-        int triIdxCount = (vertexCount / 2) * 3;
-
-        var meshDataArr = Mesh.AllocateWritableMeshData(1);
-        var meshData = meshDataArr[0];
-
-        var vertAttrs = new NativeArray<VertexAttributeDescriptor>(4, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-        vertAttrs[0] = new(VertexAttribute.Position,  dimension: 3, stream: 0);
-        vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 3, stream: 1);
-        vertAttrs[2] = new(VertexAttribute.TexCoord3, dimension: 4, stream: 2);
-        vertAttrs[3] = new(VertexAttribute.Color,     dimension: 3, stream: 3);
-
-        // Set mesh params
-        meshData.SetVertexBufferParams(vertexCount, vertAttrs);
-        vertAttrs.Dispose();
-
-        meshData.SetIndexBufferParams(triIdxCount, IndexFormat.UInt32);
-
-        // Set vertex data
-        // Positions
-        var positions = meshData.GetVertexData<float3>(0);
-        positions.CopyFrom(visualBuffer.vert);
-        // Tex Coordinates
-        var texCoords = meshData.GetVertexData<float3>(1);
-        texCoords.CopyFrom(visualBuffer.txuv);
-        // Animation Info
-        var animInfos = meshData.GetVertexData<float4>(2);
-        animInfos.CopyFrom(visualBuffer.uvan);
-        // Vertex colors
-        var vertColors = meshData.GetVertexData<float3>(3);
-        vertColors.CopyFrom(visualBuffer.tint);
-
-        // Set face data
-        var triIndices = meshData.GetIndexData<uint>();
-        uint vi = 0; int ti = 0;
-        for (;vi < vertexCount;vi += 4U, ti += 6)
-        {
-            triIndices[ti]     = vi;
-            triIndices[ti + 1] = vi + 3U;
-            triIndices[ti + 2] = vi + 2U;
-            triIndices[ti + 3] = vi;
-            triIndices[ti + 4] = vi + 1U;
-            triIndices[ti + 5] = vi + 3U;
-        }
-
-        var bounds = new Bounds(new Vector3(0.5F, 0.5F, 0.5F), new Vector3(1F, 1F, 1F));
-
-        meshData.subMeshCount = 1;
-        meshData.SetSubMesh(0, new SubMeshDescriptor(0, triIdxCount)
-        {
-            bounds = bounds,
-            vertexCount = vertexCount
-        }, MeshUpdateFlags.DontRecalculateBounds);
-
-        // Create and assign mesh
-        var mesh = new Mesh { bounds = bounds };
-        Mesh.ApplyAndDisposeWritableMeshData(meshDataArr, mesh);
-        // Recalculate mesh normals
-        mesh.RecalculateNormals();
-        filter.sharedMesh = mesh;
-
+        filter.sharedMesh = VertexBufferBuilder.BuildMesh(visualBuffer);
         render.sharedMaterial = MaterialManager.GetAtlasMaterial(itemModel.RenderType);
     }
 
@@ -476,7 +351,7 @@ public class Test : MonoBehaviour
 
     void Start()
     {
-        var overrides = new string[] { "vanilla_fix" };
+        /* var overrides = new string[] { "vanilla_fix" };
         string resVersion = "1.16.5", dataVersion = "1.16.5";
 
         if (!Directory.Exists(PathHelper.GetPackDirectoryNamed($"vanilla-{resVersion}"))) // Prepare resources first
@@ -493,7 +368,9 @@ public class Test : MonoBehaviour
                     }));
         }
         else // Resources ready, do build
+        {
             StartCoroutine(DoBuild(dataVersion, resVersion, overrides, 16));
+        } */
 
         IsPaused = false;
     }
