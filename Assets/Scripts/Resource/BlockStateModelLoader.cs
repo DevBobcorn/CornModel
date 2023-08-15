@@ -3,9 +3,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 
-using MinecraftClient.Mapping;
-
-namespace MinecraftClient.Resource
+namespace CraftSharp.Resource
 {
     public class BlockStateModelLoader
     {

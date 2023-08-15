@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MinecraftClient.Resource
+namespace CraftSharp.Resource
 {
     public class EntityGeometry
     {

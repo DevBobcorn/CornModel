@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-using MinecraftClient.Inventory;
-
-namespace MinecraftClient.Resource
+namespace CraftSharp.Resource
 {
     public class ItemModelPredicate
     {

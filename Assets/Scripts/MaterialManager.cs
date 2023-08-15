@@ -1,11 +1,10 @@
 #nullable enable
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 
-using MinecraftClient.Resource;
+using CraftSharp.Resource;
 
-namespace MinecraftClient.Rendering
+namespace CraftSharp.Rendering
 {
     public class MaterialManager : MonoBehaviour
     {

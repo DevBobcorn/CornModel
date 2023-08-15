@@ -3,9 +3,9 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 
-using MinecraftClient.Resource;
+using CraftSharp.Resource;
 
-namespace MinecraftClient.Demo
+namespace CraftSharp.Demo
 {
     public class EntityModelRender : MonoBehaviour
     {

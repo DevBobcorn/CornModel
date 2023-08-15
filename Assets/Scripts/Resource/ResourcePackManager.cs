@@ -8,9 +8,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Unity.Mathematics;
 
-using MinecraftClient.Mapping;
-
-namespace MinecraftClient.Resource
+namespace CraftSharp.Resource
 {
     public class ResourcePackManager
     {

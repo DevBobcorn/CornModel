@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MinecraftClient.Resource
+namespace CraftSharp.Resource
 {
     public class ItemModel
     {

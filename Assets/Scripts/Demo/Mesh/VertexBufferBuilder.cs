@@ -4,9 +4,9 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-using MinecraftClient.Resource;
+using CraftSharp.Resource;
 
-namespace MinecraftClient.Demo
+namespace CraftSharp.Demo
 {
     public static class VertexBufferBuilder
     {

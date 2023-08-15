@@ -2,7 +2,7 @@
 using System.Linq;
 using Unity.Mathematics;
 
-namespace MinecraftClient.Resource
+namespace CraftSharp.Resource
 {
     public class EntityModelBone
     {
