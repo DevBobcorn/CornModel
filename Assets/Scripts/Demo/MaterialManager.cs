@@ -4,7 +4,7 @@ using UnityEngine;
 
 using CraftSharp.Resource;
 
-namespace CraftSharp.Rendering
+namespace CraftSharp
 {
     public class MaterialManager : MonoBehaviour
     {
@@ -15,6 +15,8 @@ namespace CraftSharp.Rendering
         [SerializeField] public Material? AtlasWater;
 
         [SerializeField] public Material? PlayerSkin;
+
+        [SerializeField] public Material? EntityDefault;
 
         private Dictionary<RenderType, Material> atlasMaterials = new();
         private Material? defaultAtlasMaterial;
@@ -65,9 +67,6 @@ namespace CraftSharp.Rendering
             atlasMaterials.Add(RenderType.WATER, translucent);
 
             initialized = true;
-
         }
-
     }
-
 }

@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,65 +11,66 @@ namespace CraftSharp.Demo
     public class EntityModelRender : MonoBehaviour
     {
         private static readonly char SP = Path.DirectorySeparatorChar;
-        [SerializeField] private string bedrockResFolder;
-        [SerializeField] private string entityDefPath;
-        [SerializeField] private string entityGeoPath;
-        [SerializeField] private Material defaultMaterial;
 
-        public readonly Dictionary<string, string> TexturePaths = new();
-        [HideInInspector] public string DefaultGeometryName = string.Empty;
-        public Dictionary<string, EntityGeometry> Geometries = new();
+        private EntityDefinition? entityDefinition = null;
 
         public Dictionary<string, GameObject> boneObjects = new();
 
-        private string GetImagePathFromFileBaseName(string baseName)
+        private string GetImagePathFromFileName(string name)
         {
-            var basePath = $"{bedrockResFolder}{SP}{baseName}";
-
             // Image could be either tga or png
-            if (File.Exists($"{basePath}.png"))
+            if (File.Exists($"{name}.png"))
             {
-                return $"{basePath}.png";
+                return $"{name}.png";
             }
-            else if (File.Exists($"{basePath}.tga"))
+            else if (File.Exists($"{name}.tga"))
             {
-                return $"{basePath}.tga";
+                return $"{name}.tga";
             }
 
             // Nothing found
-            return basePath;
+            return name;
         }
 
-        private void LoadFromDefinition()
+        public void SetDefinitionData(EntityDefinition def) => entityDefinition = def;
+
+        public void BuildEntityModel(string resourcePath, string geometryName, EntityGeometry geometry, Material defaultMaterial)
         {
-            // Load entity definition
-            var defJson = Json.ParseJson(File.ReadAllText($"{bedrockResFolder}{SP}{entityDefPath}"));
-            var desc = defJson.Properties["minecraft:client_entity"].Properties["description"];
-            TexturePaths.Clear();
-            foreach (var pair in desc.Properties["textures"].Properties)
+            if (entityDefinition is null)
             {
-                TexturePaths.Add(pair.Key, pair.Value.StringValue);
+                Debug.LogError("Entity definition not assigned!");
+                return;
             }
-            DefaultGeometryName = desc.Properties["geometry"].Properties["default"].StringValue;
 
-            // Load entity geometries
-            var geoJson = Json.ParseJson(File.ReadAllText($"{bedrockResFolder}{SP}{entityGeoPath}"));
-            Geometries = EntityGeometry.TableFromJson(geoJson);
-        }
-
-        void BuildEntityModel(EntityGeometry geometry)
-        {
-            var texture = new Texture2D(2, 2);
-            var texName = TexturePaths.First().Value;
-            var fileName = GetImagePathFromFileBaseName(texName);
+            var texName = entityDefinition.TexturePaths.First().Value;
+            var fileName = GetImagePathFromFileName(resourcePath + SP + texName);
             // Load texture from file
-            texture.LoadImage(File.ReadAllBytes(fileName));
+            Texture2D texture;
+            var imageBytes = File.ReadAllBytes(fileName);
+            if (fileName.EndsWith(".tga")) // Read as tga image
+            {
+                texture = TGALoader.TextureFromTGA(imageBytes);
+            }
+            else // Read as png image
+            {
+                texture = new Texture2D(2, 2);
+                texture.LoadImage(imageBytes);
+            }
+
             texture.filterMode = FilterMode.Point;
-            Debug.Log($"Loaded texture from {fileName} ({texture.width}x{texture.height})");
+            //Debug.Log($"Loaded texture from {fileName} ({texture.width}x{texture.height})");
 
             if (geometry.TextureWidth != texture.width && geometry.TextureHeight != texture.height)
             {
-                Debug.LogWarning($"Specified texture size({geometry.TextureWidth}x{geometry.TextureHeight}) doesn't match image file!");
+                if (geometry.TextureWidth == 0 && geometry.TextureHeight == 0) // Not specified, just use the size we have
+                {
+                    geometry.TextureWidth = texture.width;
+                    geometry.TextureHeight = texture.height;
+                }
+                else // The sizes doesn't match
+                {
+                    Debug.LogWarning($"Specified texture size({geometry.TextureWidth}x{geometry.TextureHeight}) doesn't match image file {texName} ({texture.width}x{texture.height})!");
+                }
             }
 
             // Make a copy of the material
@@ -79,14 +81,13 @@ namespace CraftSharp.Demo
             {
                 var boneObj = new GameObject($"Bone [{bone.Name}]");
                 boneObj.transform.SetParent(transform, false);
+
                 var boneMeshObj = new GameObject($"Mesh [{bone.Name}]");
                 boneMeshObj.transform.SetParent(boneObj.transform, false);
-
-                //boneMeshObj.transform.localPosition = bone.Pivot / 16F;
-                //boneMeshObj.transform.localRotation = Rotations.RotationFromEularsXYZ(bone.Rotation);
-
                 var boneMeshFilter = boneMeshObj.AddComponent<MeshFilter>();
                 var boneMeshRenderer = boneMeshObj.AddComponent<MeshRenderer>();
+                //var boneMeshFilter = boneObj.AddComponent<MeshFilter>();
+                //var boneMeshRenderer = boneObj.AddComponent<MeshRenderer>();
 
                 var visualBuffer = new EntityVertexBuffer();
 
@@ -108,31 +109,22 @@ namespace CraftSharp.Demo
 
                 if (bone.ParentName is not null) // Set parent transform
                 {
-                    boneTransform.SetParent(boneObjects[bone.ParentName].transform, false);
-                    boneTransform.localPosition = (bone.Pivot - geometry.Bones[bone.ParentName].Pivot) / 16F;
-                    boneTransform.localRotation = Rotations.RotationFromEularsXYZ(bone.Rotation);
+                    if (boneObjects.ContainsKey(bone.ParentName))
+                    {
+                        boneTransform.SetParent(boneObjects[bone.ParentName].transform, false);
+                        boneTransform.localPosition = (bone.Pivot - geometry.Bones[bone.ParentName].Pivot) / 16F;
+                        boneTransform.localRotation = Rotations.RotationFromEularsXYZ(bone.Rotation);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"In {geometryName}: parent bone {bone.ParentName} not found!");
+                    }
                 }
                 else // Root bone
                 {
                     boneTransform.localPosition = bone.Pivot / 16F;
                     boneTransform.localRotation = Rotations.RotationFromEularsXYZ(bone.Rotation);
                 }
-            }
-        }
-
-        void Start()
-        {
-            // Load model data
-            LoadFromDefinition();
-
-            if (Geometries.ContainsKey(DefaultGeometryName))
-            {
-                // Build model meshes
-                BuildEntityModel(Geometries[DefaultGeometryName]);
-            }
-            else
-            {
-                Debug.LogWarning($"No geometry named {DefaultGeometryName} could be found.");
             }
         }
     }

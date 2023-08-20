@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 using UnityEngine;
@@ -9,8 +9,8 @@ using Unity.Collections;
 using Unity.Mathematics;
 using TMPro;
 
-using CraftSharp.Rendering;
 using CraftSharp.Resource;
+using System;
 
 namespace CraftSharp.Demo
 {
@@ -346,8 +346,58 @@ namespace CraftSharp.Demo
             InfoText.text = $"Meshes built in {Time.realtimeSinceStartup - startTime} second(s).";
         }
 
+        private IEnumerator DoEntityBuild()
+        {
+            var entityResPath = PathHelper.GetPackDirectoryNamed("bedrock_res");
+            var entityResManager = new EntityResourceManager(entityResPath);
+
+            yield return StartCoroutine(entityResManager.LoadEntityResources(new(),
+                    (status) => Loom.QueueOnMainThread(() => InfoText.text = status)));
+            
+            var testmentObj = new GameObject("[Entity Testment]");
+            var defaultMat = MaterialManager.EntityDefault;
+
+            int entityPerRow = 10;
+            int index = 0;
+            foreach (var pair in entityResManager.entityDefinitions)
+            {
+                var entityType = pair.Key;
+                var entityDef = pair.Value;
+
+                int i = index / entityPerRow;
+                int j = index % entityPerRow;
+
+                var entityRenderObj = new GameObject($"{index} {entityType}");
+                entityRenderObj.transform.SetParent(testmentObj.transform);
+                entityRenderObj.transform.localPosition= new(i * 2, 0, j * 2);
+
+                if (entityDef.GeometryNames.Count > 0)
+                {
+                    var geometryName = entityDef.GeometryNames.First().Value;
+                    entityRenderObj.name += $" ({geometryName})";
+                    if (entityResManager.entityGeometries.ContainsKey(geometryName))
+                    {
+                        var geometry = entityResManager.entityGeometries[geometryName];
+                        var entityRender = entityRenderObj.AddComponent<EntityModelRender>();
+
+                        try
+                        {
+                            entityRender.SetDefinitionData(entityDef);
+                            entityRender.BuildEntityModel(entityResPath, geometryName, geometry, defaultMat);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogWarning($"An exception occurred building model {geometryName}: {e}");
+                        }
+                    }
+                }
+                index++;
+            }
+        }
+
         void Start()
         {
+            /*
             var overrides = new string[] { "vanilla_fix" };
             string resVersion = "1.16.5", dataVersion = "1.16.5";
 
@@ -368,6 +418,9 @@ namespace CraftSharp.Demo
             {
                 StartCoroutine(DoBuild(dataVersion, resVersion, overrides, 16));
             }
+            */
+
+            StartCoroutine(DoEntityBuild());
 
             IsPaused = false;
         }

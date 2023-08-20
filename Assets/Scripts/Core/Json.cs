@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace CraftSharp
@@ -23,7 +24,7 @@ namespace CraftSharp
         /// The class storing unserialized JSON data
         /// The data can be an object, an array or a string
         /// </summary>
-        public class JSONData
+        public class JSONData : IJSONSerializable
         {
             public enum DataType { Object, Array, String };
             private DataType type;
@@ -31,12 +32,25 @@ namespace CraftSharp
             public Dictionary<string, JSONData> Properties;
             public List<JSONData> DataArray;
             public string StringValue;
+
             public JSONData(DataType datatype)
             {
                 type = datatype;
                 Properties = new Dictionary<string, JSONData>();
                 DataArray = new List<JSONData>();
-                StringValue = String.Empty;
+                StringValue = string.Empty;
+            }
+
+            public string ToJson() // Serialize back to json string
+            {
+                return type switch
+                {
+                    DataType.Object => "{" + string.Join(",", Properties.Select(x => $"\"{x.Key}\":{Object2Json(x.Value)}")) + "}",
+                    DataType.Array  => "[" + string.Join(",", DataArray.Select(x => Object2Json(x))) + "]",
+                    DataType.String => StringValue,
+
+                    _               => StringValue,
+                };
             }
         }
 
@@ -139,7 +153,10 @@ namespace CraftSharp
                     case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': case '.': case '-':
                         data = new JSONData(JSONData.DataType.String);
                         StringBuilder sb = new StringBuilder();
-                        while ((toparse[cursorpos] >= '0' && toparse[cursorpos] <= '9') || toparse[cursorpos] == '.' || toparse[cursorpos] == '-')
+                        // 'e' or 'E' can appear in the middle in a number as the mark for
+                        // scientific notation, but they're not supposed to be at the start
+                        while ((toparse[cursorpos] >= '0' && toparse[cursorpos] <= '9') || toparse[cursorpos] == 'e' || toparse[cursorpos] == 'E' ||
+                                toparse[cursorpos] == '.' || toparse[cursorpos] == '-' || toparse[cursorpos] == '+')
                         {
                             sb.Append(toparse[cursorpos]);
                             cursorpos++;
@@ -187,6 +204,48 @@ namespace CraftSharp
             {
                 return new JSONData(JSONData.DataType.String);
             }
+        }
+
+        /// <summary>
+        /// Implement this interface if you want custom
+        /// json serialization for your class
+        /// </summary>
+        public interface IJSONSerializable
+        {
+            public string ToJson();
+        }
+
+        private static string Dictionary2Json(Dictionary<string, object> dictionary)
+        {
+            return "{" + string.Join(",", dictionary.Select(x => $"\"{x.Key}\":{ Object2Json(x.Value) }") ) + "}";
+        }
+
+        private static string List2Json(List<object> list)
+        {
+            return "[" + string.Join(",", list.Select(x => Object2Json(x)) ) + "]";
+        }
+
+        /// <summary>
+        /// Serialize an object into JSON string
+        /// </summary>
+        /// <param name="obj">Object to serialize</param>
+        public static string Object2Json(object obj)
+        {
+            return obj switch
+            {
+                // Nested object
+                Dictionary<string, object> dict => Dictionary2Json(dict),
+                // Object list
+                List<object> list               => List2Json(list),
+                // User-defined json serialization
+                IJSONSerializable objValue       => objValue.ToJson(),
+                // String value, wrap with quoatation marks
+                string strValue                 => $"\"{strValue}\"",
+                // Boolean value, should be lowercase 'true' or 'false'
+                bool boolValue                  => boolValue ? "true" : "false",
+                // Other types, just convert to string
+                _                               => obj.ToString()
+            };
         }
 
         /// <summary>
