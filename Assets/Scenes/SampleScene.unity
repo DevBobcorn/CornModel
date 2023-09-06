@@ -885,7 +885,7 @@ MonoBehaviour:
   AtlasTranslucent: {fileID: 2100000, guid: 8ee6dff0c60e65743895b69cc4c5bc0a, type: 2}
   AtlasWater: {fileID: 2100000, guid: 8ee6dff0c60e65743895b69cc4c5bc0a, type: 2}
   PlayerSkin: {fileID: 2100000, guid: 7379410228ee90946b6153e6b79bb716, type: 2}
-  EntityDefault: {fileID: 2100000, guid: 6122547987f40994097ea0e44b66e389, type: 2}
+  EntityDefault: {fileID: 2100000, guid: 86d405550c208fb42b9d898076ce3f26, type: 2}
 --- !u!1 &1028116430
 GameObject:
   m_ObjectHideFlags: 0

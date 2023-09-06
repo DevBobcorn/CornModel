@@ -10,11 +10,12 @@ namespace CraftSharp.Demo
 {
     public class EntityModelRender : MonoBehaviour
     {
-        private static readonly char SP = Path.DirectorySeparatorChar;
-
         private EntityDefinition? entityDefinition = null;
 
         public Dictionary<string, GameObject> boneObjects = new();
+
+        public string[] animationNames = { };
+        private EntityAnimation[] animations = { };
 
         private string GetImagePathFromFileName(string name)
         {
@@ -34,7 +35,7 @@ namespace CraftSharp.Demo
 
         public void SetDefinitionData(EntityDefinition def) => entityDefinition = def;
 
-        public void BuildEntityModel(string resourcePath, string geometryName, EntityGeometry geometry, Material defaultMaterial)
+        public void BuildEntityModel(string geometryName, EntityGeometry geometry, Material defaultMaterial)
         {
             if (entityDefinition is null)
             {
@@ -43,7 +44,7 @@ namespace CraftSharp.Demo
             }
 
             var texName = entityDefinition.TexturePaths.First().Value;
-            var fileName = GetImagePathFromFileName(resourcePath + SP + texName);
+            var fileName = GetImagePathFromFileName(texName);
             // Load texture from file
             Texture2D texture;
             var imageBytes = File.ReadAllBytes(fileName);
@@ -86,8 +87,6 @@ namespace CraftSharp.Demo
                 boneMeshObj.transform.SetParent(boneObj.transform, false);
                 var boneMeshFilter = boneMeshObj.AddComponent<MeshFilter>();
                 var boneMeshRenderer = boneMeshObj.AddComponent<MeshRenderer>();
-                //var boneMeshFilter = boneObj.AddComponent<MeshFilter>();
-                //var boneMeshRenderer = boneObj.AddComponent<MeshRenderer>();
 
                 var visualBuffer = new EntityVertexBuffer();
 
@@ -126,6 +125,9 @@ namespace CraftSharp.Demo
                     boneTransform.localRotation = Rotations.RotationFromEularsXYZ(bone.Rotation);
                 }
             }
+        
+            // Prepare animations
+            animationNames = entityDefinition.AnimationNames.Select(x => $"{x.Key} ({x.Value})").ToArray();
         }
     }
 }

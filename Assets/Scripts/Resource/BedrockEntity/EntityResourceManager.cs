@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using CraftSharp.Resource;
+using System.Linq;
 
 namespace CraftSharp
 {
@@ -100,28 +101,94 @@ namespace CraftSharp
 
         public readonly Dictionary<ResourceLocation, EntityDefinition> entityDefinitions = new();
         public readonly Dictionary<string, EntityGeometry> entityGeometries = new();
+        public readonly Dictionary<string, EntityAnimation> entityAnimations = new();
         
         private readonly string resourcePath;
+        private readonly string playerModelsPath;
 
-        public EntityResourceManager(string resPath)
+        public EntityResourceManager(string resPath, string playerPath)
         {
             resourcePath = resPath;
+            playerModelsPath = playerPath;
         }
 
         public IEnumerator LoadEntityResources(DataLoadFlag flag, Action<string> updateStatus)
         {
+            // Load animations
+            var animFolderDir = new DirectoryInfo($"{resourcePath}{SP}animations");
+            foreach (var animFile in animFolderDir.GetFiles("*.json", SearchOption.AllDirectories)) // Allow sub folders...
+            {
+                var data = Json.ParseJson(File.ReadAllText(animFile.FullName)).Properties["animations"];
+
+                foreach (var pair in data.Properties)
+                {
+                    var animName = pair.Key;
+                    var anim = EntityAnimation.FromJson(pair.Value);
+
+                    entityAnimations.Add(animName, anim);
+                }
+            }
+
+            var playerModelFolderDir = new DirectoryInfo(playerModelsPath);
+            foreach (var modelFolder in playerModelFolderDir.GetDirectories())
+            {
+                var playerFolderRoot = new DirectoryInfo(modelFolder.FullName);
+
+                var geoFile = $"{playerFolderRoot}{SP}main.json";
+                if (File.Exists(geoFile)) // This model is valid
+                {
+                    Debug.Log($"Loading bedrock player model from {geoFile}");
+                    var data = Json.ParseJson(File.ReadAllText(geoFile));
+
+                    var geoName = string.Empty;
+
+                    try
+                    {
+                        var geometries = EntityGeometry.TableFromJson(data);
+                        
+                        if (geometries.Count > 1) // Only one geometry is expected
+                        {
+                            Debug.LogWarning($"More than 1 geometries is found in file {geoFile}");
+                        }
+
+                        geoName = $"geometry.player_{modelFolder.Name}";
+                        var geometry = geometries.First().Value;
+
+                        entityGeometries.Add(geoName, geometry);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning($"An error occurred when parsing {geoFile}: {e}");
+                    }
+                    
+                    var dummyEntityIdentifier = new ResourceLocation("custom_player", modelFolder.Name);
+
+                    entityDefinitions.Add(dummyEntityIdentifier, new EntityDefinition(
+                            EntityDefinition.UNSPECIFIED_VERSION,
+                            EntityDefinition.UNSPECIFIED_VERSION,
+                            dummyEntityIdentifier,
+                            new Dictionary<string, string> { [ "default" ] = $"{playerFolderRoot}{SP}{modelFolder.Name}" },
+                            new Dictionary<string, string> { [ "default" ] = geoName },
+                            new Dictionary<string, string> { }
+                    ));
+                }
+            }
+            
+            yield return null;
+
             if (!Directory.Exists(resourcePath))
             {
                 Debug.LogWarning("Bedrock resource not present!");
                 yield break;
             }
 
+            // Load entity definitions
             var defFolderDir = new DirectoryInfo($"{resourcePath}{SP}entity");
             foreach (var defFile in defFolderDir.GetFiles("*.json", SearchOption.TopDirectoryOnly)) // No sub folders...
             {
                 var data = Json.ParseJson(File.ReadAllText(defFile.FullName));
 
-                var entityDef = EntityDefinition.FromJson(data);
+                var entityDef = EntityDefinition.FromJson(resourcePath, data);
                 var entityType = entityDef.EntityType;
 
                 if (entityDefinitions.ContainsKey(entityType)) // Check version
@@ -143,6 +210,7 @@ namespace CraftSharp
 
             yield return null;
 
+            // Load entity geometries
             var geoFolderDir = new DirectoryInfo($"{resourcePath}{SP}models");
             foreach (var geoFile in geoFolderDir.GetFiles("*.json", SearchOption.AllDirectories)) // Allow sub folders...
             {

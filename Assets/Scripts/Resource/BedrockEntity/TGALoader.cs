@@ -78,7 +78,7 @@ namespace CraftSharp.Resource
                 bool right2left = (imageSpec & 0b010000) != 0; // Bit 4
                 bool top2bottom = (imageSpec & 0b100000) != 0; // Bit 5
 
-                Debug.Log($"TGA Info: size: {width}x{height} type: {imageType} id-length: {imageIdLength} bit-depth: {bitDepth} [{imageSpec}] r2l: {right2left} t2b: {top2bottom}");
+                //Debug.Log($"TGA Info: size: {width}x{height} type: {imageType} id-length: {imageIdLength} bit-depth: {bitDepth} [{imageSpec}] r2l: {right2left} t2b: {top2bottom}");
 
                 if (imageType == 0) // Empty image
                 {

@@ -5,26 +5,34 @@ namespace CraftSharp.Resource
 {
     public class EntityDefinition
     {
-        private static readonly BedrockVersion UNSPECIFIED_VERSION = new(999, 0, 0);
+        private static readonly char SP = System.IO.Path.DirectorySeparatorChar;
+        public static readonly BedrockVersion UNSPECIFIED_VERSION = new(999, 0, 0);
         // File versions
         public BedrockVersion FormatVersion;
         public BedrockVersion MinEngineVersion;
         // Identifier of this entity type
         public ResourceLocation EntityType;
         // Texture name => texture path in pack
-        public Dictionary<string, string> TexturePaths = new();
+        public readonly Dictionary<string, string> TexturePaths;
         // Variant name => geometry name
-        public Dictionary<string, string> GeometryNames = new();
+        public readonly Dictionary<string, string> GeometryNames;
+        // State name => animation name
+        public readonly Dictionary<string, string> AnimationNames;
 
-        private EntityDefinition(BedrockVersion formatVersion, BedrockVersion minEnVersion, ResourceLocation entityType)
+        internal EntityDefinition(BedrockVersion formatVersion, BedrockVersion minEnVersion, ResourceLocation entityType,
+                Dictionary<string, string> texturePaths, Dictionary<string, string> geometryNames, Dictionary<string, string> animationNames)
         {
             FormatVersion = formatVersion;
             MinEngineVersion = minEnVersion;
 
             EntityType = entityType;
+
+            TexturePaths = texturePaths;
+            GeometryNames = geometryNames;
+            AnimationNames = animationNames;
         }
 
-        public static EntityDefinition FromJson(Json.JSONData data)
+        public static EntityDefinition FromJson(string resourceRoot, Json.JSONData data)
         {
             var defVersion = BedrockVersion.FromString(data.Properties["format_version"].StringValue);
 
@@ -34,7 +42,8 @@ namespace CraftSharp.Resource
             Dictionary<string, string> texturePaths;
             if (desc.Properties.ContainsKey("textures"))
             {
-                texturePaths = desc.Properties["textures"].Properties.ToDictionary(x => x.Key, x => x.Value.StringValue);
+                texturePaths = desc.Properties["textures"].Properties.ToDictionary(x => x.Key,
+                        x => $"{resourceRoot}{SP}{x.Value.StringValue}");
             }
             else
             {
@@ -51,17 +60,23 @@ namespace CraftSharp.Resource
                 geometryNames = new();
             }
 
+            Dictionary<string, string> animationNames;
+            if (desc.Properties.ContainsKey("animations"))
+            {
+                animationNames = desc.Properties["animations"].Properties.ToDictionary(x => x.Key, x => x.Value.StringValue);
+            }
+            else
+            {
+                animationNames = new();
+            }
+
             var minEnVersion = UNSPECIFIED_VERSION;
             if (desc.Properties.ContainsKey("min_engine_version"))
             {
                 minEnVersion = BedrockVersion.FromString(desc.Properties["min_engine_version"].StringValue);
             }
 
-            return new(defVersion, minEnVersion, entityType)
-            {
-                TexturePaths = texturePaths,
-                GeometryNames = geometryNames
-            };
+            return new(defVersion, minEnVersion, entityType, texturePaths, geometryNames, animationNames);
         }
     }
 }

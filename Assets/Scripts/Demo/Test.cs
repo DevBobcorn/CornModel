@@ -11,6 +11,7 @@ using TMPro;
 
 using CraftSharp.Resource;
 using System;
+using CraftSharp.Molang.Runtime;
 
 namespace CraftSharp.Demo
 {
@@ -346,10 +347,32 @@ namespace CraftSharp.Demo
             InfoText.text = $"Meshes built in {Time.realtimeSinceStartup - startTime} second(s).";
         }
 
+        private void TestAnimation(string jsonStr)
+        {
+            var data = Json.ParseJson(jsonStr);
+            var anim = EntityBoneAnimation.FromJson(data);
+
+            foreach (var keyframe in anim.scaleKeyframes)
+            {
+                Debug.Log($"SCALE [{keyframe.time}] {keyframe.pre} {keyframe.post}");
+            }
+
+            var scope = new MoScope(new());
+            var env = new MoLangEnvironment();
+
+            for (float a = -1F; a < 3F; a += 0.05F)
+            {
+                var val = anim.Evaluate(a, scope, env);
+                Debug.Log($"[{a}] => [{val.trans} | {val.scale} {val.rot}]");
+            }
+        }
+
         private IEnumerator DoEntityBuild()
         {
             var entityResPath = PathHelper.GetPackDirectoryNamed("bedrock_res");
-            var entityResManager = new EntityResourceManager(entityResPath);
+            var playerModelsPath = PathHelper.GetPackDirectoryNamed("player_models");
+
+            var entityResManager = new EntityResourceManager(entityResPath, playerModelsPath);
 
             yield return StartCoroutine(entityResManager.LoadEntityResources(new(),
                     (status) => Loom.QueueOnMainThread(() => InfoText.text = status)));
@@ -383,7 +406,7 @@ namespace CraftSharp.Demo
                         try
                         {
                             entityRender.SetDefinitionData(entityDef);
-                            entityRender.BuildEntityModel(entityResPath, geometryName, geometry, defaultMat);
+                            entityRender.BuildEntityModel(geometryName, geometry, defaultMat);
                         }
                         catch (Exception e)
                         {
