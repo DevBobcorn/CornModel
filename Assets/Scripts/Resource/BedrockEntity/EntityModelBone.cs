@@ -48,6 +48,18 @@ namespace CraftSharp.Resource
                 boneRotation.x = -boneRotation.x;
             }
 
+            // Backwards compatibility for 'bind_pose_rotation' in 1.8 format
+            // This got replaced by per-cube pivot and rotation definitions.
+            // See https://github.com/JannisX11/blockbench/issues/990
+            float3 bindPoseRot = float3.zero;
+            bool useBindPoseRot = data.Properties.ContainsKey("bind_pose_rotation");
+            if (useBindPoseRot)
+            {
+                bindPoseRot = VectorUtil.Json2SwappedFloat3(data.Properties["bind_pose_rotation"]);
+                // Get opposite x
+                bindPoseRot.x = -bindPoseRot.x;
+            }
+
             EntityModelCube[] boneCubes;
 
             if (!data.Properties.ContainsKey("cubes"))
@@ -97,19 +109,28 @@ namespace CraftSharp.Resource
                     }
 
                     var rotation = float3.zero;
-                    if (cubeData.Properties.ContainsKey("rotation"))
-                    {
-                        rotation = VectorUtil.Json2SwappedFloat3(cubeData.Properties["rotation"]);
-                        // Get opposite x
-                        rotation.x = -rotation.x;
-                    }
-
                     var pivot = float3.zero;
-                    if (cubeData.Properties.ContainsKey("pivot"))
+
+                    if (useBindPoseRot) // Legacy 1.8 format, where cube pivot and rotation is not yet supported, but 'bind_pose_rotation' is available instead
                     {
-                        pivot = VectorUtil.Json2SwappedFloat3(cubeData.Properties["pivot"]);
-                        // Get opposite z
-                        pivot.z = -pivot.z;
+                        rotation = bindPoseRot;
+                        pivot = bonePivot;
+                    }
+                    else // Probably new format, see if cube rotation and pivot is specified
+                    {
+                        if (cubeData.Properties.ContainsKey("rotation"))
+                        {
+                            rotation = VectorUtil.Json2SwappedFloat3(cubeData.Properties["rotation"]);
+                            // Get opposite x
+                            rotation.x = -rotation.x;
+                        }
+
+                        if (cubeData.Properties.ContainsKey("pivot"))
+                        {
+                            pivot = VectorUtil.Json2SwappedFloat3(cubeData.Properties["pivot"]);
+                            // Get opposite z
+                            pivot.z = -pivot.z;
+                        }
                     }
 
                     var inflate = 0F;
@@ -127,7 +148,7 @@ namespace CraftSharp.Resource
                         PerFaceUV = perFaceUV,
                         Inflate = inflate,
                         Pivot = pivot,
-                        Rotation = rotation,
+                        Rotation = rotation
                     };
                 } ).ToArray();
             }
