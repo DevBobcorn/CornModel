@@ -137,7 +137,7 @@ namespace CraftSharp
                 var geoFile = $"{playerFolderRoot}{SP}main.json";
                 if (File.Exists(geoFile)) // This model is valid
                 {
-                    Debug.Log($"Loading bedrock player model from {geoFile}");
+                    //Debug.Log($"Loading bedrock player model from {geoFile}");
                     var data = Json.ParseJson(File.ReadAllText(geoFile));
 
                     var geoName = string.Empty;

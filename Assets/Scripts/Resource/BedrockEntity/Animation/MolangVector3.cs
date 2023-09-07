@@ -1,8 +1,12 @@
 #nullable enable
+using System.Collections.Generic;
+using UnityEngine;
 using Unity.Mathematics;
 
 using CraftSharp.Molang.Runtime;
 using CraftSharp.Molang.Parser;
+using Unity.VisualScripting;
+using CraftSharp.Molang.Utils;
 
 namespace CraftSharp.Resource
 {
@@ -52,6 +56,16 @@ namespace CraftSharp.Resource
             }
         }
 
+        public HashSet<MoPath> GetReferencedVariables()
+        {
+            HashSet<MoPath> result = new();
+            if (x is not null) result.AddRange(x.GetReferencedVariables());
+            if (y is not null) result.AddRange(y.GetReferencedVariables());
+            if (z is not null) result.AddRange(z.GetReferencedVariables());
+
+            return result;
+        }
+
         private static (IExpression? exp, float val) ReadMolangExpressionOrValue(Json.JSONData data)
         {
             if (float.TryParse(data.StringValue, out float val)) // Literal number
@@ -86,11 +100,19 @@ namespace CraftSharp.Resource
 
         public float3 Evaluate(MoScope scope, MoLangEnvironment env)
         {
-            return new(
-                    x is null ? xValue : x.Evaluate(scope, env).AsFloat(),
-                    y is null ? yValue : y.Evaluate(scope, env).AsFloat(),
-                    z is null ? zValue : z.Evaluate(scope, env).AsFloat()
-            );
+            try
+            {
+                return new(
+                        x is null ? xValue : x.Evaluate(scope, env).AsFloat(),
+                        y is null ? yValue : y.Evaluate(scope, env).AsFloat(),
+                        z is null ? zValue : z.Evaluate(scope, env).AsFloat()
+                );
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"Error occurred when evaluating vector3: {e}");
+                return float3.zero;
+            }
         }
 
         public override string ToString()

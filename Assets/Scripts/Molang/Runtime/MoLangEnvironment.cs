@@ -33,6 +33,9 @@ namespace CraftSharp.Molang.Runtime
 			Structs.TryAdd("math", MoLangMath.Library);
 			Structs.TryAdd("temp", new VariableStruct());
 			Structs.TryAdd("variable", new VariableStruct());
+
+			Structs.TryAdd("query", new VariableStruct());
+
 			Structs.TryAdd("array", new VariableArrayStruct());
 
 			Structs.TryAdd("context", new ContextStruct());

@@ -394,26 +394,17 @@ namespace CraftSharp.Demo
                 entityRenderObj.transform.SetParent(testmentObj.transform);
                 entityRenderObj.transform.localPosition= new(i * 2, 0, j * 2);
 
-                if (entityDef.GeometryNames.Count > 0)
+                var entityRender = entityRenderObj.AddComponent<EntityModelRender>();
+                try
                 {
-                    var geometryName = entityDef.GeometryNames.First().Value;
-                    entityRenderObj.name += $" ({geometryName})";
-                    if (entityResManager.entityGeometries.ContainsKey(geometryName))
-                    {
-                        var geometry = entityResManager.entityGeometries[geometryName];
-                        var entityRender = entityRenderObj.AddComponent<EntityModelRender>();
-
-                        try
-                        {
-                            entityRender.SetDefinitionData(entityDef);
-                            entityRender.BuildEntityModel(geometryName, geometry, defaultMat);
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.LogWarning($"An exception occurred building model {geometryName}: {e}");
-                        }
-                    }
+                    entityRender.SetDefinitionData(entityDef);
+                    entityRender.BuildEntityModel(entityResManager, defaultMat);
                 }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"An exception occurred building model for entity {entityType}: {e}");
+                }
+                
                 index++;
             }
         }

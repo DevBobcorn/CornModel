@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using Unity.Mathematics;
 
 using CraftSharp.Resource;
+using CraftSharp.Molang.Runtime;
+using CraftSharp.Molang.Runtime.Value;
+using CraftSharp.Molang.Utils;
 
 namespace CraftSharp.Demo
 {
@@ -15,7 +19,11 @@ namespace CraftSharp.Demo
         public Dictionary<string, GameObject> boneObjects = new();
 
         public string[] animationNames = { };
-        private EntityAnimation[] animations = { };
+        private EntityAnimation?[] animations = { };
+        private EntityAnimation? currentAnimation = null;
+
+        private MoScope scope = new(new MoLangRuntime());
+        private MoLangEnvironment env = new();
 
         private string GetImagePathFromFileName(string name)
         {
@@ -33,15 +41,35 @@ namespace CraftSharp.Demo
             return name;
         }
 
-        public void SetDefinitionData(EntityDefinition def) => entityDefinition = def;
+        public void SetDefinitionData(EntityDefinition def)
+        {
+            entityDefinition = def;
+        }
 
-        public void BuildEntityModel(string geometryName, EntityGeometry geometry, Material defaultMaterial)
+        public void BuildEntityModel(EntityResourceManager entityResManager, Material defaultMaterial)
         {
             if (entityDefinition is null)
             {
                 Debug.LogError("Entity definition not assigned!");
                 return;
             }
+
+            if (entityDefinition.GeometryNames.Count == 0)
+            {
+                Debug.LogWarning($"Entity definition has no geometry!");
+                return;
+            }
+
+            var geometryName = entityDefinition.GeometryNames.First().Value;
+            gameObject.name += $" ({geometryName})";
+
+            if (!entityResManager.entityGeometries.ContainsKey(geometryName))
+            {
+                Debug.LogWarning($"Entity geometry [{geometryName}] not loaded!");
+                return;
+            }
+
+            var geometry = entityResManager.entityGeometries[geometryName];
 
             var texName = entityDefinition.TexturePaths.First().Value;
             var fileName = GetImagePathFromFileName(texName);
@@ -101,7 +129,7 @@ namespace CraftSharp.Demo
 
                 boneObjects.Add(bone.Name, boneObj);
             }
-
+            // Setup initial bone pose
             foreach (var bone in geometry.Bones.Values)
             {
                 var boneTransform = boneObjects[bone.Name].transform;
@@ -128,6 +156,78 @@ namespace CraftSharp.Demo
         
             // Prepare animations
             animationNames = entityDefinition.AnimationNames.Select(x => $"{x.Key} ({x.Value})").ToArray();
+
+            animations = entityDefinition.AnimationNames.Select(x => 
+                    {
+                        EntityAnimation? anim;
+
+                        if (entityResManager.entityAnimations.ContainsKey(x.Value))
+                        {
+                            anim = entityResManager.entityAnimations[x.Value];
+                        }
+                        else
+                        {
+                            anim = null;
+                            Debug.LogWarning($"Animation [{x.Value}] not loaded!");
+                        }
+
+                        return anim; 
+                    }).ToArray();
+        }
+
+        public EntityAnimation? SetAnimation(int index, float initialTime)
+        {
+            if (index >= 0 && index < animations.Length)
+            {
+                currentAnimation = animations[index];
+
+                UpdateAnimation(initialTime);
+
+                return currentAnimation;
+            }
+            else
+            {
+                throw new System.Exception($"Invalid animation index: {index}");
+            }
+        }
+
+        public void UpdateAnimation(float time)
+        {
+            if (currentAnimation != null) // An animation file is present
+            {
+                foreach (var boneAnim in currentAnimation.BoneAnimations)
+                {
+                    if (boneObjects.ContainsKey(boneAnim.Key))
+                    {
+                        var (trans, scale, rot) = boneAnim.Value.Evaluate(time, scope, env);
+                        UpdateBone(boneAnim.Key, trans, scale, rot);
+                    }
+                    else
+                    {
+                        Debug.Log($"Trying to update bone [{boneAnim.Key}] which is not present!");
+                    }
+                }
+            }
+        }
+
+        public void UpdateMolangValue(MoPath varName, IMoValue value)
+        {
+            env.SetValue(varName, value);
+        }
+
+        private void UpdateBone(string boneName, float3? trans, float3? scale, float3? rot)
+        {
+            var boneTransform = boneObjects[boneName].transform;
+
+            if (trans is not null)
+            {
+                //boneTransform.localPosition = 
+            }
+            
+            if (rot is not null)
+            {
+                boneTransform.localRotation = Rotations.RotationFromEularsXYZ(rot.Value.zyx);
+            }
         }
     }
 }

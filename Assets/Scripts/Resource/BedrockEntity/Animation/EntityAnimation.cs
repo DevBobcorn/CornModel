@@ -12,14 +12,14 @@ namespace CraftSharp.Resource
     public class EntityAnimation
     {
         public readonly LoopType Loop;
-        public readonly float AnimationLength;
+        public readonly float Length;
 
         public readonly Dictionary<string, EntityBoneAnimation> BoneAnimations;
 
         private EntityAnimation(LoopType loop, float length, Dictionary<string, EntityBoneAnimation> anims)
         {
             Loop = loop;
-            AnimationLength = length;
+            Length = length;
             BoneAnimations = anims;
         }
 

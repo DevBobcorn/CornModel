@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Mathematics;
-using UnityEngine;
+using Unity.VisualScripting;
 
 using CraftSharp.Molang.Runtime;
+using CraftSharp.Molang.Utils;
 
 namespace CraftSharp.Resource
 {
@@ -14,6 +15,9 @@ namespace CraftSharp.Resource
         public readonly (float time, MolangVector3 pre, MolangVector3 post)[]? scaleKeyframes;
         public readonly (float time, MolangVector3 pre, MolangVector3 post)[]? rotationKeyframes;
 
+        private readonly HashSet<MoPath> variables = new();
+        public HashSet<MoPath> Variables => variables;
+
         private EntityBoneAnimation((float time, MolangVector3 pre, MolangVector3 post)[]? t,
                 (float time, MolangVector3 pre, MolangVector3 post)[]? s,
                 (float time, MolangVector3 pre, MolangVector3 post)[]? r)
@@ -21,6 +25,27 @@ namespace CraftSharp.Resource
             translationKeyframes = t;
             scaleKeyframes = s;
             rotationKeyframes = r;
+
+            variables.Clear();
+
+            // Collect all appeared variables
+            if (t is not null) for (int i = 0; i < t.Length; i++)
+            {
+                variables.AddRange(t[i].pre.GetReferencedVariables());
+                variables.AddRange(t[i].post.GetReferencedVariables());
+            }
+
+            if (s is not null) for (int i = 0; i < s.Length; i++)
+            {
+                variables.AddRange(s[i].pre.GetReferencedVariables());
+                variables.AddRange(s[i].post.GetReferencedVariables());
+            }
+
+            if (r is not null) for (int i = 0; i < r.Length; i++)
+            {
+                variables.AddRange(r[i].pre.GetReferencedVariables());
+                variables.AddRange(r[i].post.GetReferencedVariables());
+            }
         }
 
         public static EntityBoneAnimation FromJson(Json.JSONData data)
@@ -64,7 +89,7 @@ namespace CraftSharp.Resource
                 return keyframes[0].pre.Evaluate(scope, env);
             }
 
-            int prevFrame = -1;
+            int prevFrame = 0;
             
             while (prevFrame < keyframes.Length - 1 && keyframes[prevFrame + 1].time < time)
             {

@@ -80,5 +80,23 @@ namespace CraftSharp.Molang.Utils
 		{
 			return Path;
 		}
+
+		// Modification start
+		public override bool Equals(object obj)
+		{
+			return Equals(obj as MoPath);
+		}
+
+		public bool Equals(MoPath other)
+		{
+			return other != null &&
+					Path == other.Path;
+		}
+
+		public override int GetHashCode()
+		{
+			return Path.GetHashCode();
+		}
+		// Modification end
 	}
 }
