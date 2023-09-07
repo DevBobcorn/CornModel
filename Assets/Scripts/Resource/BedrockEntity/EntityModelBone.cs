@@ -1,7 +1,6 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using Unity.Mathematics;
 
 namespace CraftSharp.Resource
@@ -91,6 +90,12 @@ namespace CraftSharp.Resource
                         }
                     }
 
+                    bool? cubeMirrorUV = null;
+                    if (cubeData.Properties.ContainsKey("mirror"))
+                    {
+                        cubeMirrorUV = cubeData.Properties["mirror"].StringValue == "true";
+                    }
+
                     var rotation = float3.zero;
                     if (cubeData.Properties.ContainsKey("rotation"))
                     {
@@ -117,6 +122,7 @@ namespace CraftSharp.Resource
                     {
                         Origin = origin,
                         Size = size,
+                        MirrorUV = cubeMirrorUV,
                         UV = uv,
                         PerFaceUV = perFaceUV,
                         Inflate = inflate,

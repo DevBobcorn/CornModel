@@ -9,6 +9,8 @@ namespace CraftSharp.Resource
         // Size and uv should always be integers so that they can be correctly mapped, See below:
         // https://learn.microsoft.com/en-us/minecraft/creator/documents/entitymodelingandanimation
         public float3 Size;
+        // Nullable, use parent bone's MirrorUV is not specified
+        public bool? MirrorUV;
         // Whole box uv mapping
         public float2 UV;
         // Per-face uv mapping (optional), face direction => (x, y, size x, size y)

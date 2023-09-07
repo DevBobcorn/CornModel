@@ -5,7 +5,7 @@ namespace CraftSharp.Resource
 {
     public static class EntityCubeGeometry
     {
-        public static void Build(ref EntityVertexBuffer buffer, int texWidth, int texHeight, bool mirrorUV, float3 bonePivot, EntityModelCube cube)
+        public static void Build(ref EntityVertexBuffer buffer, int texWidth, int texHeight, bool boneMirrorUV, float3 bonePivot, EntityModelCube cube)
         {
             // Unity                   Minecraft            Top Quad Vertices
             //  A +Z (East)             A +X (East)          v0---v1
@@ -22,6 +22,8 @@ namespace CraftSharp.Resource
             float sx =  cube.Size.x;
             float sy =  cube.Size.y;
             float sz =  cube.Size.z;
+
+            bool mirrorUV = cube.MirrorUV ?? boneMirrorUV;
 
             if (cube.PerFaceUV is null) // Use whole box uv mapping
             {
