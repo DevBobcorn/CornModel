@@ -97,6 +97,7 @@ namespace CraftSharp
 
     public class EntityResourceManager
     {
+        public static readonly BedrockVersion UNSPECIFIED_VERSION = new(-1, 0, 0);
         private static readonly char SP = Path.DirectorySeparatorChar;
 
         public readonly Dictionary<ResourceLocation, EntityDefinition> entityDefinitions = new();
@@ -110,6 +111,26 @@ namespace CraftSharp
         {
             resourcePath = resPath;
             playerModelsPath = playerPath;
+        }
+
+        private bool ReplaceCheck(BedrockVersion prevVer, BedrockVersion newVer)
+        {
+            if (newVer.Equals(UNSPECIFIED_VERSION))
+            {
+                return false;
+            }
+            else
+            {
+                if (prevVer.Equals(UNSPECIFIED_VERSION))
+                {
+                    return true;
+                }
+                else // Both are specified
+                {
+                    // Return false if they're the same
+                    return newVer > prevVer;
+                }
+            }
         }
 
         public IEnumerator LoadEntityResources(DataLoadFlag flag, Action<string> updateStatus)
@@ -164,9 +185,7 @@ namespace CraftSharp
                     var dummyEntityIdentifier = new ResourceLocation("custom_player", modelFolder.Name);
 
                     entityDefinitions.Add(dummyEntityIdentifier, new EntityDefinition(
-                            EntityDefinition.UNSPECIFIED_VERSION,
-                            EntityDefinition.UNSPECIFIED_VERSION,
-                            dummyEntityIdentifier,
+                            UNSPECIFIED_VERSION, UNSPECIFIED_VERSION, dummyEntityIdentifier,
                             new Dictionary<string, string> { [ "default" ] = $"{playerFolderRoot}{SP}{modelFolder.Name}" },
                             new Dictionary<string, string> { [ "default" ] = geoName },
                             new Dictionary<string, string> { }
@@ -195,7 +214,8 @@ namespace CraftSharp
                 {
                     var prev = entityDefinitions[entityType];
 
-                    if (prev.FormatVersion < entityDef.FormatVersion || prev.MinEngineVersion < entityDef.MinEngineVersion) // Update this entry
+                    if (ReplaceCheck(prev.FormatVersion, entityDef.FormatVersion)
+                            || ReplaceCheck(prev.MinEngineVersion, entityDef.MinEngineVersion)) // Update this entry
                     {
                         entityDefinitions[entityType] = entityDef;
                         //Debug.Log($"Updating entry: [{entityType}] {defFile} v{entityDef.MinEngineVersion}");
@@ -228,7 +248,8 @@ namespace CraftSharp
                         {
                             var prev = entityGeometries[geoName];
 
-                            if (prev.FormatVersion < geometry.FormatVersion || prev.MinEngineVersion < geometry.MinEngineVersion) // Update this entry
+                            if (ReplaceCheck(prev.FormatVersion, geometry.FormatVersion)
+                                    || ReplaceCheck(prev.MinEngineVersion, geometry.MinEngineVersion)) // Update this entry
                             {
                                 entityGeometries[geoName] = geometry;
                                 //Debug.Log($"Updating entry: [{geoName}] {geoFile} v{geometry.MinEngineVersion}");

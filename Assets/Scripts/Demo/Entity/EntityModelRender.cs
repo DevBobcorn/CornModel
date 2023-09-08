@@ -18,6 +18,8 @@ namespace CraftSharp.Demo
 
         public Dictionary<string, GameObject> boneObjects = new();
 
+        private EntityGeometry? geometry = null;
+
         public string[] animationNames = { };
         private EntityAnimation?[] animations = { };
         private EntityAnimation? currentAnimation = null;
@@ -69,7 +71,7 @@ namespace CraftSharp.Demo
                 return;
             }
 
-            var geometry = entityResManager.entityGeometries[geometryName];
+            geometry = entityResManager.entityGeometries[geometryName];
 
             var texName = entityDefinition.TexturePaths.First().Value;
             var fileName = GetImagePathFromFileName(texName);
@@ -111,10 +113,10 @@ namespace CraftSharp.Demo
                 var boneObj = new GameObject($"Bone [{bone.Name}]");
                 boneObj.transform.SetParent(transform, false);
 
-                var boneMeshObj = new GameObject($"Mesh [{bone.Name}]");
-                boneMeshObj.transform.SetParent(boneObj.transform, false);
-                var boneMeshFilter = boneMeshObj.AddComponent<MeshFilter>();
-                var boneMeshRenderer = boneMeshObj.AddComponent<MeshRenderer>();
+                //var boneMeshObj = new GameObject($"Mesh [{bone.Name}]");
+                //boneMeshObj.transform.SetParent(boneObj.transform, false);
+                var boneMeshFilter = boneObj.AddComponent<MeshFilter>();
+                var boneMeshRenderer = boneObj.AddComponent<MeshRenderer>();
 
                 var visualBuffer = new EntityVertexBuffer();
 
@@ -168,7 +170,7 @@ namespace CraftSharp.Demo
                         else
                         {
                             anim = null;
-                            Debug.LogWarning($"Animation [{x.Value}] not loaded!");
+                            // TODO: Debug.LogWarning($"Animation [{x.Value}] not loaded!");
                         }
 
                         return anim; 
@@ -193,14 +195,14 @@ namespace CraftSharp.Demo
 
         public void UpdateAnimation(float time)
         {
-            if (currentAnimation != null) // An animation file is present
+            if (currentAnimation != null && geometry != null) // An animation file is present
             {
                 foreach (var boneAnim in currentAnimation.BoneAnimations)
                 {
                     if (boneObjects.ContainsKey(boneAnim.Key))
                     {
                         var (trans, scale, rot) = boneAnim.Value.Evaluate(time, scope, env);
-                        UpdateBone(boneAnim.Key, trans, scale, rot);
+                        UpdateBone(boneAnim.Key, geometry, trans, scale, rot);
                     }
                     else
                     {
@@ -215,18 +217,25 @@ namespace CraftSharp.Demo
             env.SetValue(varName, value);
         }
 
-        private void UpdateBone(string boneName, float3? trans, float3? scale, float3? rot)
+        private void UpdateBone(string boneName, EntityGeometry geometry, float3? trans, float3? scale, float3? rot)
         {
             var boneTransform = boneObjects[boneName].transform;
+            var bone = geometry.Bones[boneName];
 
             if (trans is not null)
             {
-                //boneTransform.localPosition = 
+                //boneTransform.localPosition = (bone.Pivot - geometry.Bones[bone.ParentName].Pivot) / 16F;
+
+                var converted = trans.Value.zyx;
+                converted.z = -converted.z;
+                boneTransform.localPosition = (converted);
             }
             
             if (rot is not null)
             {
-                boneTransform.localRotation = Rotations.RotationFromEularsXYZ(rot.Value.zyx);
+                var converted = rot.Value.zyx;
+                converted.x = -converted.x;
+                boneTransform.localRotation = Rotations.RotationFromEularsXYZ(converted);
             }
         }
     }

@@ -6,7 +6,7 @@ namespace CraftSharp.Resource
     public class EntityDefinition
     {
         private static readonly char SP = System.IO.Path.DirectorySeparatorChar;
-        public static readonly BedrockVersion UNSPECIFIED_VERSION = new(999, 0, 0);
+        
         // File versions
         public BedrockVersion FormatVersion;
         public BedrockVersion MinEngineVersion;
@@ -70,7 +70,7 @@ namespace CraftSharp.Resource
                 animationNames = new();
             }
 
-            var minEnVersion = UNSPECIFIED_VERSION;
+            var minEnVersion = EntityResourceManager.UNSPECIFIED_VERSION;
             if (desc.Properties.ContainsKey("min_engine_version"))
             {
                 minEnVersion = BedrockVersion.FromString(desc.Properties["min_engine_version"].StringValue);

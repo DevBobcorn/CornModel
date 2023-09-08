@@ -6,7 +6,6 @@ namespace CraftSharp.Resource
 {
     public class EntityGeometry
     {
-        private static readonly BedrockVersion UNSPECIFIED_VERSION = new(999, 0, 0);
         // File versions
         public BedrockVersion FormatVersion;
         public BedrockVersion MinEngineVersion;
@@ -60,7 +59,7 @@ namespace CraftSharp.Resource
                     else
                         bones = new();
                     
-                    var minEnVersion = UNSPECIFIED_VERSION;
+                    var minEnVersion = EntityResourceManager.UNSPECIFIED_VERSION;
                     if (itemDesc.Properties.ContainsKey("min_engine_version"))
                         minEnVersion = BedrockVersion.FromString(itemDesc.Properties["min_engine_version"].StringValue);
 
@@ -104,7 +103,7 @@ namespace CraftSharp.Resource
                     else
                         bones = new();
                     
-                    var minEnVersion = UNSPECIFIED_VERSION;
+                    var minEnVersion = EntityResourceManager.UNSPECIFIED_VERSION;
                     if (item.Properties.ContainsKey("min_engine_version"))
                         minEnVersion = BedrockVersion.FromString(item.Properties["min_engine_version"].StringValue);
 
