@@ -131,6 +131,11 @@ namespace CraftSharp.Resource
                             // Get opposite z
                             pivot.z = -pivot.z;
                         }
+                        else //  Not specified
+                        {
+                            // In this case, the geometry center of the cube is used as the pivot (took me a really long time to figure out)
+                            pivot = origin + size / 2F;
+                        }
                     }
 
                     var inflate = 0F;
