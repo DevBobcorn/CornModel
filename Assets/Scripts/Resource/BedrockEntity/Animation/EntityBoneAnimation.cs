@@ -52,9 +52,9 @@ namespace CraftSharp.Resource
         {
             (float time, MolangVector3 pre, MolangVector3 post)[]? t = null, s = null, r = null;
 
-            if (data.Properties.ContainsKey("translation"))
+            if (data.Properties.ContainsKey("position"))
             {
-                t = ReadKeyframes(data.Properties["translation"]);
+                t = ReadKeyframes(data.Properties["position"]);
             }
 
             if (data.Properties.ContainsKey("scale"))

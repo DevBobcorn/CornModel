@@ -241,7 +241,7 @@ namespace CraftSharp.Resource
                                     }
 
                                     var overrideGeometry = new ItemGeometryBuilder(rawOverrideModel).Build();
-                                    var predicate = ItemModelPredicate.fromJson(o.Properties["predicate"]);
+                                    var predicate = ItemModelPredicate.FromJson(o.Properties["predicate"]);
                                     
                                     itemModel.AddOverride(predicate, overrideGeometry);
                                 }

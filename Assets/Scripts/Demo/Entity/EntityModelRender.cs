@@ -17,6 +17,7 @@ namespace CraftSharp.Demo
         private EntityDefinition? entityDefinition = null;
 
         public Dictionary<string, GameObject> boneObjects = new();
+        public Dictionary<string, GameObject> boneMeshObjects = new();
 
         private EntityGeometry? geometry = null;
 
@@ -130,6 +131,7 @@ namespace CraftSharp.Demo
                 boneMeshRenderer!.sharedMaterial = material;
 
                 boneObjects.Add(bone.Name, boneObj);
+                boneMeshObjects.Add(bone.Name, boneObj);
             }
             // Setup initial bone pose
             foreach (var bone in geometry.Bones.Values)
@@ -202,7 +204,7 @@ namespace CraftSharp.Demo
                     if (boneObjects.ContainsKey(boneAnim.Key))
                     {
                         var (trans, scale, rot) = boneAnim.Value.Evaluate(time, scope, env);
-                        UpdateBone(boneAnim.Key, geometry, trans, scale, rot);
+                        UpdateBone(boneAnim.Key, trans, scale, rot);
                     }
                     else
                     {
@@ -217,18 +219,26 @@ namespace CraftSharp.Demo
             env.SetValue(varName, value);
         }
 
-        private void UpdateBone(string boneName, EntityGeometry geometry, float3? trans, float3? scale, float3? rot)
+        private void UpdateBone(string boneName, float3? trans, float3? scale, float3? rot)
         {
             var boneTransform = boneObjects[boneName].transform;
-            var bone = geometry.Bones[boneName];
+            //var boneMeshTransform = boneMeshObjects[boneName].transform;
+
+            var bone = geometry!.Bones[boneName];
 
             if (trans is not null)
             {
-                //boneTransform.localPosition = (bone.Pivot - geometry.Bones[bone.ParentName].Pivot) / 16F;
-
                 var converted = trans.Value.zyx;
                 converted.z = -converted.z;
-                boneTransform.localPosition = (converted);
+
+                float3 offset;
+
+                if (bone.ParentName is not null)
+                    offset = (converted + bone.Pivot - geometry.Bones[bone.ParentName].Pivot) / 16F;
+                else
+                    offset = (converted + bone.Pivot) / 16F;
+
+                boneTransform.localPosition = offset;
             }
             
             if (rot is not null)
