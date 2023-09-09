@@ -1,4 +1,3 @@
-using UnityEngine;
 using Unity.Mathematics;
 
 namespace CraftSharp.Resource
@@ -35,14 +34,6 @@ namespace CraftSharp.Resource
                 //  |  |      |  |      | sy = 1
                 //  G--H------I--J------N
                 //      sz = 6    sz = 6
-
-                int newLength = vertOffset + 24;
-
-                var verts = new float3[newLength];
-                var txuvs = new float2[newLength];
-
-                buffer.vert.CopyTo(verts, 0);
-                buffer.txuv.CopyTo(txuvs, 0);
 
                 float u = cube.UV.x;
                 float v = cube.UV.y;
@@ -82,102 +73,123 @@ namespace CraftSharp.Resource
                     z -= inf;
                 }
 
-                // Up
-                verts[vertOffset]     = new( 0 + x, sy + y, sz + z); // 4 => 2
-                verts[vertOffset + 1] = new(sx + x, sy + y, sz + z); // 5 => 3
-                verts[vertOffset + 2] = new( 0 + x, sy + y,  0 + z); // 3 => 1
-                verts[vertOffset + 3] = new(sx + x, sy + y,  0 + z); // 2 => 0
-                if (mirrorUV)
+                bool upDown =     sx > 0F && sz > 0F;
+                bool southNorth = sy > 0F && sz > 0F;
+                bool eastWest =   sx > 0F && sy > 0F;
+
+                int newLength = vertOffset + (upDown ? 8 : 0) + (southNorth ? 8 : 0) + (eastWest ? 8 : 0);
+
+                var verts = new float3[newLength];
+                var txuvs = new float2[newLength];
+
+                buffer.vert.CopyTo(verts, 0);
+                buffer.txuv.CopyTo(txuvs, 0);
+
+                if (upDown) // Face (inflated) not collapsed
                 {
-                    txuvs[vertOffset]     = E; txuvs[vertOffset + 1] = B;
-                    txuvs[vertOffset + 2] = D; txuvs[vertOffset + 3] = A;
+                    // Up
+                    verts[vertOffset]     = new( 0 + x, sy + y, sz + z); // 4 => 2
+                    verts[vertOffset + 1] = new(sx + x, sy + y, sz + z); // 5 => 3
+                    verts[vertOffset + 2] = new( 0 + x, sy + y,  0 + z); // 3 => 1
+                    verts[vertOffset + 3] = new(sx + x, sy + y,  0 + z); // 2 => 0
+                    if (mirrorUV)
+                    {
+                        txuvs[vertOffset]     = E; txuvs[vertOffset + 1] = B;
+                        txuvs[vertOffset + 2] = D; txuvs[vertOffset + 3] = A;
+                    }
+                    else
+                    {
+                        txuvs[vertOffset]     = D; txuvs[vertOffset + 1] = A;
+                        txuvs[vertOffset + 2] = E; txuvs[vertOffset + 3] = B;
+                    }
+                    vertOffset += 4;
+                    // Down
+                    verts[vertOffset]     = new( 0 + x,  0 + y,  0 + z); // 0 => 0
+                    verts[vertOffset + 1] = new(sx + x,  0 + y,  0 + z); // 1 => 1
+                    verts[vertOffset + 2] = new( 0 + x,  0 + y, sz + z); // 7 => 3
+                    verts[vertOffset + 3] = new(sx + x,  0 + y, sz + z); // 6 => 2
+                    if (mirrorUV)
+                    {
+                        txuvs[vertOffset]     = E; txuvs[vertOffset + 1] = B;
+                        txuvs[vertOffset + 2] = L; txuvs[vertOffset + 3] = K;
+                    }
+                    else
+                    {
+                        txuvs[vertOffset]     = L; txuvs[vertOffset + 1] = K;
+                        txuvs[vertOffset + 2] = E; txuvs[vertOffset + 3] = B;
+                    }
+                    vertOffset += 4;
                 }
-                else
+                if (southNorth) // Face (inflated) not collapsed
                 {
-                    txuvs[vertOffset]     = D; txuvs[vertOffset + 1] = A;
-                    txuvs[vertOffset + 2] = E; txuvs[vertOffset + 3] = B;
+                    // South
+                    verts[vertOffset]     = new(sx + x, sy + y,  0 + z); // 2 => 1
+                    verts[vertOffset + 1] = new(sx + x, sy + y, sz + z); // 5 => 2
+                    verts[vertOffset + 2] = new(sx + x,  0 + y,  0 + z); // 1 => 0
+                    verts[vertOffset + 3] = new(sx + x,  0 + y, sz + z); // 6 => 3
+                    if (mirrorUV)
+                    {
+                        txuvs[vertOffset]     = M; txuvs[vertOffset + 1] = F;
+                        txuvs[vertOffset + 2] = N; txuvs[vertOffset + 3] = J;
+                    }
+                    else
+                    {
+                        txuvs[vertOffset]     = F; txuvs[vertOffset + 1] = M;
+                        txuvs[vertOffset + 2] = J; txuvs[vertOffset + 3] = N;
+                    }
+                    vertOffset += 4;
+                    // North (Facade)
+                    verts[vertOffset]     = new( 0 + x, sy + y, sz + z); // 4 => 2
+                    verts[vertOffset + 1] = new( 0 + x, sy + y,  0 + z); // 3 => 1
+                    verts[vertOffset + 2] = new( 0 + x,  0 + y, sz + z); // 7 => 3
+                    verts[vertOffset + 3] = new( 0 + x,  0 + y,  0 + z); // 0 => 0
+                    if (mirrorUV)
+                    {
+                        txuvs[vertOffset]     = E; txuvs[vertOffset + 1] = D;
+                        txuvs[vertOffset + 2] = I; txuvs[vertOffset + 3] = H;
+                    }
+                    else
+                    {
+                        txuvs[vertOffset]     = D; txuvs[vertOffset + 1] = E;
+                        txuvs[vertOffset + 2] = H; txuvs[vertOffset + 3] = I;
+                    }
+                    vertOffset += 4;
                 }
-                vertOffset += 4;
-                // Down
-                verts[vertOffset]     = new( 0 + x,  0 + y,  0 + z); // 0 => 0
-                verts[vertOffset + 1] = new(sx + x,  0 + y,  0 + z); // 1 => 1
-                verts[vertOffset + 2] = new( 0 + x,  0 + y, sz + z); // 7 => 3
-                verts[vertOffset + 3] = new(sx + x,  0 + y, sz + z); // 6 => 2
-                if (mirrorUV)
+                if (eastWest) // Face (inflated) not collapsed
                 {
-                    txuvs[vertOffset]     = E; txuvs[vertOffset + 1] = B;
-                    txuvs[vertOffset + 2] = L; txuvs[vertOffset + 3] = K;
+                    // East
+                    verts[vertOffset]     = new(sx + x, sy + y, sz + z); // 5 => 1
+                    verts[vertOffset + 1] = new( 0 + x, sy + y, sz + z); // 4 => 0
+                    verts[vertOffset + 2] = new(sx + x,  0 + y, sz + z); // 6 => 2
+                    verts[vertOffset + 3] = new( 0 + x,  0 + y, sz + z); // 7 => 3
+                    if (mirrorUV)
+                    {
+                        txuvs[vertOffset]     = F; txuvs[vertOffset + 1] = E;
+                        txuvs[vertOffset + 2] = J; txuvs[vertOffset + 3] = I;
+                    }
+                    else
+                    {
+                        txuvs[vertOffset]     = C; txuvs[vertOffset + 1] = D;
+                        txuvs[vertOffset + 2] = G; txuvs[vertOffset + 3] = H;
+                    }
+                    vertOffset += 4;
+                    // West
+                    verts[vertOffset]     = new( 0 + x, sy + y,  0 + z); // 3 => 3
+                    verts[vertOffset + 1] = new(sx + x, sy + y,  0 + z); // 2 => 2
+                    verts[vertOffset + 2] = new( 0 + x,  0 + y,  0 + z); // 0 => 0
+                    verts[vertOffset + 3] = new(sx + x,  0 + y,  0 + z); // 1 => 1
+                    if (mirrorUV)
+                    {
+                        txuvs[vertOffset]     = D; txuvs[vertOffset + 1] = C;
+                        txuvs[vertOffset + 2] = H; txuvs[vertOffset + 3] = G;
+                    }
+                    else
+                    {
+                        txuvs[vertOffset]     = E; txuvs[vertOffset + 1] = F;
+                        txuvs[vertOffset + 2] = I; txuvs[vertOffset + 3] = J;
+                    }
+                    // Not necessary vertOffset += 4;
                 }
-                else
-                {
-                    txuvs[vertOffset]     = L; txuvs[vertOffset + 1] = K;
-                    txuvs[vertOffset + 2] = E; txuvs[vertOffset + 3] = B;
-                }
-                vertOffset += 4;
-                // South
-                verts[vertOffset]     = new(sx + x, sy + y,  0 + z); // 2 => 1
-                verts[vertOffset + 1] = new(sx + x, sy + y, sz + z); // 5 => 2
-                verts[vertOffset + 2] = new(sx + x,  0 + y,  0 + z); // 1 => 0
-                verts[vertOffset + 3] = new(sx + x,  0 + y, sz + z); // 6 => 3
-                if (mirrorUV)
-                {
-                    txuvs[vertOffset]     = M; txuvs[vertOffset + 1] = F;
-                    txuvs[vertOffset + 2] = N; txuvs[vertOffset + 3] = J;
-                }
-                else
-                {
-                    txuvs[vertOffset]     = F; txuvs[vertOffset + 1] = M;
-                    txuvs[vertOffset + 2] = J; txuvs[vertOffset + 3] = N;
-                }
-                vertOffset += 4;
-                // North (Facade)
-                verts[vertOffset]     = new( 0 + x, sy + y, sz + z); // 4 => 2
-                verts[vertOffset + 1] = new( 0 + x, sy + y,  0 + z); // 3 => 1
-                verts[vertOffset + 2] = new( 0 + x,  0 + y, sz + z); // 7 => 3
-                verts[vertOffset + 3] = new( 0 + x,  0 + y,  0 + z); // 0 => 0
-                if (mirrorUV)
-                {
-                    txuvs[vertOffset]     = E; txuvs[vertOffset + 1] = D;
-                    txuvs[vertOffset + 2] = I; txuvs[vertOffset + 3] = H;
-                }
-                else
-                {
-                    txuvs[vertOffset]     = D; txuvs[vertOffset + 1] = E;
-                    txuvs[vertOffset + 2] = H; txuvs[vertOffset + 3] = I;
-                }
-                vertOffset += 4;
-                // East
-                verts[vertOffset]     = new(sx + x, sy + y, sz + z); // 5 => 1
-                verts[vertOffset + 1] = new( 0 + x, sy + y, sz + z); // 4 => 0
-                verts[vertOffset + 2] = new(sx + x,  0 + y, sz + z); // 6 => 2
-                verts[vertOffset + 3] = new( 0 + x,  0 + y, sz + z); // 7 => 3
-                if (mirrorUV)
-                {
-                    txuvs[vertOffset]     = F; txuvs[vertOffset + 1] = E;
-                    txuvs[vertOffset + 2] = J; txuvs[vertOffset + 3] = I;
-                }
-                else
-                {
-                    txuvs[vertOffset]     = C; txuvs[vertOffset + 1] = D;
-                    txuvs[vertOffset + 2] = G; txuvs[vertOffset + 3] = H;
-                }
-                vertOffset += 4;
-                // West
-                verts[vertOffset]     = new( 0 + x, sy + y,  0 + z); // 3 => 3
-                verts[vertOffset + 1] = new(sx + x, sy + y,  0 + z); // 2 => 2
-                verts[vertOffset + 2] = new( 0 + x,  0 + y,  0 + z); // 0 => 0
-                verts[vertOffset + 3] = new(sx + x,  0 + y,  0 + z); // 1 => 1
-                if (mirrorUV)
-                {
-                    txuvs[vertOffset]     = D; txuvs[vertOffset + 1] = C;
-                    txuvs[vertOffset + 2] = H; txuvs[vertOffset + 3] = G;
-                }
-                else
-                {
-                    txuvs[vertOffset]     = E; txuvs[vertOffset + 1] = F;
-                    txuvs[vertOffset + 2] = I; txuvs[vertOffset + 3] = J;
-                }
-                // Not necessary vertOffset += 4;
 
                 // rotation pivot position in bone local space
                 var rotPivot = cube.Pivot - bonePivot;
