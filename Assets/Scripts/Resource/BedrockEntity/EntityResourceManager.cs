@@ -6,6 +6,7 @@ using System.IO;
 using UnityEngine;
 using CraftSharp.Resource;
 using System.Linq;
+using Unity.VisualScripting;
 
 namespace CraftSharp
 {
@@ -100,9 +101,13 @@ namespace CraftSharp
         public static readonly BedrockVersion UNSPECIFIED_VERSION = new(-1, 0, 0);
         private static readonly char SP = Path.DirectorySeparatorChar;
 
-        public readonly Dictionary<ResourceLocation, EntityDefinition> entityDefinitions = new();
-        public readonly Dictionary<string, EntityGeometry> entityGeometries = new();
-        public readonly Dictionary<string, EntityAnimation> entityAnimations = new();
+        public readonly Dictionary<ResourceLocation, EntityDefinition> EntityDefinitions = new();
+        public readonly Dictionary<string, EntityGeometry> EntityGeometries = new();
+        public readonly Dictionary<string, EntityAnimation> EntityAnimations = new();
+
+        public readonly Dictionary<string, EntityRenderType> MaterialRenderTypes = new();
+
+        public readonly string[] EntityMaterialNames = { };
         
         private readonly string resourcePath;
         private readonly string playerModelsPath;
@@ -135,6 +140,12 @@ namespace CraftSharp
 
         public IEnumerator LoadEntityResources(DataLoadFlag flag, Action<string> updateStatus)
         {
+            // Clean up
+            EntityDefinitions.Clear();
+            EntityGeometries.Clear();
+            EntityAnimations.Clear();
+            MaterialRenderTypes.Clear();
+
             // Load animations
             var animFolderDir = new DirectoryInfo($"{resourcePath}{SP}animations");
             foreach (var animFile in animFolderDir.GetFiles("*.json", SearchOption.AllDirectories)) // Allow sub folders...
@@ -146,7 +157,7 @@ namespace CraftSharp
                     var animName = pair.Key;
                     var anim = EntityAnimation.FromJson(pair.Value);
 
-                    entityAnimations.Add(animName, anim);
+                    EntityAnimations.Add(animName, anim);
                 }
             }
 
@@ -175,7 +186,7 @@ namespace CraftSharp
                         geoName = $"geometry.player_{modelFolder.Name}";
                         var geometry = geometries.First().Value;
 
-                        entityGeometries.Add(geoName, geometry);
+                        EntityGeometries.Add(geoName, geometry);
                     }
                     catch (Exception e)
                     {
@@ -184,9 +195,10 @@ namespace CraftSharp
                     
                     var dummyEntityIdentifier = new ResourceLocation("custom_player", modelFolder.Name);
 
-                    entityDefinitions.Add(dummyEntityIdentifier, new EntityDefinition(
+                    EntityDefinitions.Add(dummyEntityIdentifier, new EntityDefinition(
                             UNSPECIFIED_VERSION, UNSPECIFIED_VERSION, dummyEntityIdentifier,
                             new Dictionary<string, string> { [ "default" ] = $"{playerFolderRoot}{SP}{modelFolder.Name}" },
+                            new Dictionary<string, string> { [ "default" ] = "ysm_custom_player" },
                             new Dictionary<string, string> { [ "default" ] = geoName },
                             new Dictionary<string, string> { }
                     ));
@@ -210,20 +222,20 @@ namespace CraftSharp
                 var entityDef = EntityDefinition.FromJson(resourcePath, data);
                 var entityType = entityDef.EntityType;
 
-                if (entityDefinitions.ContainsKey(entityType)) // Check version
+                if (EntityDefinitions.ContainsKey(entityType)) // Check version
                 {
-                    var prev = entityDefinitions[entityType];
+                    var prev = EntityDefinitions[entityType];
 
                     if (ReplaceCheck(prev.FormatVersion, entityDef.FormatVersion)
                             || ReplaceCheck(prev.MinEngineVersion, entityDef.MinEngineVersion)) // Update this entry
                     {
-                        entityDefinitions[entityType] = entityDef;
+                        EntityDefinitions[entityType] = entityDef;
                         //Debug.Log($"Updating entry: [{entityType}] {defFile} v{entityDef.MinEngineVersion}");
                     }
                 }
                 else // Just register
                 {
-                    entityDefinitions.Add(entityType, entityDef);
+                    EntityDefinitions.Add(entityType, entityDef);
                     //Debug.Log($"Creating entry: [{entityType}] {defFile} v{entityDef.MinEngineVersion}");
                 }
             }
@@ -244,20 +256,20 @@ namespace CraftSharp
                         var geoName = pair.Key;
                         var geometry = pair.Value;
 
-                        if (entityGeometries.ContainsKey(geoName)) // Check version
+                        if (EntityGeometries.ContainsKey(geoName)) // Check version
                         {
-                            var prev = entityGeometries[geoName];
+                            var prev = EntityGeometries[geoName];
 
                             if (ReplaceCheck(prev.FormatVersion, geometry.FormatVersion)
                                     || ReplaceCheck(prev.MinEngineVersion, geometry.MinEngineVersion)) // Update this entry
                             {
-                                entityGeometries[geoName] = geometry;
+                                EntityGeometries[geoName] = geometry;
                                 //Debug.Log($"Updating entry: [{geoName}] {geoFile} v{geometry.MinEngineVersion}");
                             }
                         }
                         else // Just register
                         {
-                            entityGeometries.Add(geoName, geometry);
+                            EntityGeometries.Add(geoName, geometry);
                             //Debug.Log($"Creating entry: [{geoName}] {geoFile} v{geometry.MinEngineVersion}");
                         }
                     }
@@ -266,6 +278,36 @@ namespace CraftSharp
                 {
                     Debug.LogWarning($"An error occurred when parsing {geoFile}: {e}");
                 }
+            }
+        
+
+            // Collect all entity materials
+            /* HashSet<string> matNames = new();
+            foreach (var def in entityDefinitions.Values)
+            {
+                matNames.AddRange(def.MaterialIdentifiers.Values);
+            }
+
+            string a = Json.Object2Json(matNames.ToDictionary(x => x, x => (object) "cutout_doublesided"));
+            File.WriteAllText(PathHelper.GetExtraDataFile("entity_render_type.json"), a); */
+
+            // Read entity material render types
+            var matDictionary = Json.ParseJson(File.ReadAllText(
+                    PathHelper.GetExtraDataFile("entity_render_type.json"))).Properties;
+            
+            foreach (var pair in matDictionary)
+            {
+                EntityRenderType renderType = pair.Value.StringValue switch
+                {
+                    "solid"              => EntityRenderType.SOLID,
+                    "cutout"             => EntityRenderType.CUTOUT,
+                    "cutout_doublesided" => EntityRenderType.CUTOUT_DOUBLESIDED,
+                    "translucent"        => EntityRenderType.TRANSLUCENT,
+
+                    _                    => EntityRenderType.SOLID
+                };
+
+                MaterialRenderTypes.Add(pair.Key, renderType);
             }
         }
     }

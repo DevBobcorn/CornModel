@@ -14,9 +14,10 @@ namespace CraftSharp
         [SerializeField] public Material? AtlasTranslucent;
         [SerializeField] public Material? AtlasWater;
 
-        [SerializeField] public Material? PlayerSkin;
-
-        [SerializeField] public Material? EntityDefault;
+        [SerializeField] public Material? EntitySolid;
+        [SerializeField] public Material? EntityCutout;
+        [SerializeField] public Material? EntityCutoutDoubleSided;
+        [SerializeField] public Material? EntityTranslucent;
 
         private Dictionary<RenderType, Material> atlasMaterials = new();
         private Material? defaultAtlasMaterial;
@@ -24,17 +25,30 @@ namespace CraftSharp
         private Dictionary<string, Material> skinMaterials = new();
         public Dictionary<string, Material> SkinMaterials => skinMaterials;
 
-        private bool initialized = false;
+        private bool atlasInitialized = false;
 
         public Material GetAtlasMaterial(RenderType renderType)
         {
-            EnsureInitialized();
+            EnsureAtlasInitialized();
             return atlasMaterials.GetValueOrDefault(renderType, defaultAtlasMaterial!);
         }
 
-        public void EnsureInitialized()
+        public Material GetEntityMaterial(EntityRenderType renderType)
         {
-            if (!initialized) Initialize();
+            return renderType switch
+            {
+                EntityRenderType.SOLID              => EntitySolid!,
+                EntityRenderType.CUTOUT             => EntityCutout!,
+                EntityRenderType.CUTOUT_DOUBLESIDED => EntityCutoutDoubleSided!,
+                EntityRenderType.TRANSLUCENT        => EntityTranslucent!,
+
+                _                                   => EntitySolid!
+            };
+        }
+
+        public void EnsureAtlasInitialized()
+        {
+            if (!atlasInitialized) Initialize();
         }
 
         private void Initialize()
@@ -66,7 +80,7 @@ namespace CraftSharp
             // Water
             atlasMaterials.Add(RenderType.WATER, translucent);
 
-            initialized = true;
+            atlasInitialized = true;
         }
     }
 }

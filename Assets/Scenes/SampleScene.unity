@@ -848,7 +848,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   InfoText: {fileID: 1389106677}
   CrosshairAnimator: {fileID: 2143307027}
-  MaterialManager: {fileID: 964542882}
+  materialManager: {fileID: 964542882}
   inventory: {fileID: 1323800610}
   inventoryItemPrefab: {fileID: 1333662668710857103, guid: 314f1f3499033e446b6e61dee39d3f77, type: 3}
   InventoryBuildList: 44000000c2010000e4000000e9000000e8000000290100004a010000a6010000e10000000001000004010000d2000000a0030000ae0100000e010000df020000440200005b0200003d02000084030000
@@ -884,8 +884,10 @@ MonoBehaviour:
   AtlasCutoutMipped: {fileID: 2100000, guid: 356fe3b2c3144ef4f82484e1a7bebe4e, type: 2}
   AtlasTranslucent: {fileID: 2100000, guid: 8ee6dff0c60e65743895b69cc4c5bc0a, type: 2}
   AtlasWater: {fileID: 2100000, guid: 8ee6dff0c60e65743895b69cc4c5bc0a, type: 2}
-  PlayerSkin: {fileID: 2100000, guid: 7379410228ee90946b6153e6b79bb716, type: 2}
-  EntityDefault: {fileID: 2100000, guid: 86d405550c208fb42b9d898076ce3f26, type: 2}
+  EntitySolid: {fileID: 2100000, guid: 6122547987f40994097ea0e44b66e389, type: 2}
+  EntityCutout: {fileID: 2100000, guid: 86d405550c208fb42b9d898076ce3f26, type: 2}
+  EntityCutoutDoubleSided: {fileID: 2100000, guid: 7379410228ee90946b6153e6b79bb716, type: 2}
+  EntityTranslucent: {fileID: 2100000, guid: abefb633aa7f4994cbcae1b6c9dde1e7, type: 2}
 --- !u!1 &1028116430
 GameObject:
   m_ObjectHideFlags: 0

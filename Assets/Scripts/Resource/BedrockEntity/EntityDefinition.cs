@@ -14,13 +14,16 @@ namespace CraftSharp.Resource
         public ResourceLocation EntityType;
         // Texture name => texture path in pack
         public readonly Dictionary<string, string> TexturePaths;
+        // Material name => material identifier
+        public readonly Dictionary<string, string> MaterialIdentifiers;
         // Variant name => geometry name
         public readonly Dictionary<string, string> GeometryNames;
         // State name => animation name
         public readonly Dictionary<string, string> AnimationNames;
 
         internal EntityDefinition(BedrockVersion formatVersion, BedrockVersion minEnVersion, ResourceLocation entityType,
-                Dictionary<string, string> texturePaths, Dictionary<string, string> geometryNames, Dictionary<string, string> animationNames)
+                Dictionary<string, string> texturePaths, Dictionary<string, string> matIds,
+                Dictionary<string, string> geometryNames,Dictionary<string, string> animationNames)
         {
             FormatVersion = formatVersion;
             MinEngineVersion = minEnVersion;
@@ -28,6 +31,7 @@ namespace CraftSharp.Resource
             EntityType = entityType;
 
             TexturePaths = texturePaths;
+            MaterialIdentifiers = matIds;
             GeometryNames = geometryNames;
             AnimationNames = animationNames;
         }
@@ -38,6 +42,17 @@ namespace CraftSharp.Resource
 
             var desc = data.Properties["minecraft:client_entity"].Properties["description"];
             var entityType = ResourceLocation.FromString(desc.Properties["identifier"].StringValue);
+
+            Dictionary<string, string> matIds;
+            if (desc.Properties.ContainsKey("materials"))
+            {
+                matIds = desc.Properties["materials"].Properties.ToDictionary(x => x.Key,
+                        x => x.Value.StringValue);
+            }
+            else
+            {
+                matIds = new();
+            }
 
             Dictionary<string, string> texturePaths;
             if (desc.Properties.ContainsKey("textures"))
@@ -76,7 +91,7 @@ namespace CraftSharp.Resource
                 minEnVersion = BedrockVersion.FromString(desc.Properties["min_engine_version"].StringValue);
             }
 
-            return new(defVersion, minEnVersion, entityType, texturePaths, geometryNames, animationNames);
+            return new(defVersion, minEnVersion, entityType, texturePaths, matIds, geometryNames, animationNames);
         }
     }
 }

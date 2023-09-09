@@ -24,7 +24,7 @@ namespace CraftSharp.Demo
 
         [SerializeField] public TMP_Text InfoText;
         [SerializeField] public Animator CrosshairAnimator;
-        [SerializeField] public MaterialManager MaterialManager;
+        [SerializeField] private MaterialManager materialManager;
 
         [SerializeField] public RectTransform inventory;
         [SerializeField] public GameObject inventoryItemPrefab;
@@ -152,12 +152,12 @@ namespace CraftSharp.Demo
                 {
                     render.sharedMaterials =
                         new []{
-                            MaterialManager.GetAtlasMaterial(RenderType.WATER),
-                            MaterialManager.GetAtlasMaterial(stateModel.RenderType)
+                            materialManager.GetAtlasMaterial(RenderType.WATER),
+                            materialManager.GetAtlasMaterial(stateModel.RenderType)
                         };
                 }
                 else
-                    render.sharedMaterial = MaterialManager.GetAtlasMaterial(stateModel.RenderType);
+                    render.sharedMaterial = materialManager.GetAtlasMaterial(stateModel.RenderType);
 
                 altitude += 1;
             }
@@ -203,7 +203,7 @@ namespace CraftSharp.Demo
                 var mesh = VertexBufferBuilder.BuildMesh(visualBuffer);
                 filter.sharedMesh   = mesh;
                 collider.sharedMesh = mesh;
-                render.sharedMaterial = MaterialManager.GetAtlasMaterial(itemModel.RenderType);
+                render.sharedMaterial = materialManager.GetAtlasMaterial(itemModel.RenderType);
 
                 altitude += 1;
             }
@@ -265,7 +265,7 @@ namespace CraftSharp.Demo
             itemGeometry.Build(ref visualBuffer, ITEM_CENTER, colors);
 
             filter.sharedMesh = VertexBufferBuilder.BuildMesh(visualBuffer);
-            render.sharedMaterial = MaterialManager.GetAtlasMaterial(itemModel.RenderType);
+            render.sharedMaterial = materialManager.GetAtlasMaterial(itemModel.RenderType);
         }
 
         class World : AbstractWorld { }
@@ -378,11 +378,9 @@ namespace CraftSharp.Demo
                     (status) => Loom.QueueOnMainThread(() => InfoText.text = status)));
             
             var testmentObj = new GameObject("[Entity Testment]");
-            var defaultMat = MaterialManager.EntityDefault;
-
             int entityPerRow = 10;
             int index = 0;
-            foreach (var pair in entityResManager.entityDefinitions)
+            foreach (var pair in entityResManager.EntityDefinitions)
             {
                 var entityType = pair.Key;
                 var entityDef = pair.Value;
@@ -398,7 +396,7 @@ namespace CraftSharp.Demo
                 try
                 {
                     entityRender.SetDefinitionData(entityDef);
-                    entityRender.BuildEntityModel(entityResManager, defaultMat);
+                    entityRender.BuildEntityModel(entityResManager, materialManager);
                 }
                 catch (Exception e)
                 {

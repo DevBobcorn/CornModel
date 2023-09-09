@@ -16,6 +16,7 @@ namespace CraftSharp.Demo
     public class EntityModelRenderEditor : Editor
     {
         private static readonly MoPath ANIM_TIME_KEY = new("query.anim_time");
+        private int selectedTexture = 0;
         private int selectedAnimation = -1;
         private EntityAnimation? animation = null;
 
@@ -28,12 +29,18 @@ namespace CraftSharp.Demo
         {
             var render = (EntityModelRender) target;
 
-            var sel = EditorGUILayout.Popup("Animation", selectedAnimation, render.animationNames);
-
-            if (sel != selectedAnimation) // Selection changed
+            var texSel = EditorGUILayout.Popup("Texture", selectedTexture, render.TextureNames);
+            if (texSel != selectedTexture)
             {
-                selectedAnimation = sel;
-                animation = render.SetAnimation(sel, variableTable.GetValueOrDefault(ANIM_TIME_KEY, 0F));
+                selectedTexture = texSel;
+                render.SetTexture(texSel);
+            }
+
+            var animSel = EditorGUILayout.Popup("Animation", selectedAnimation, render.AnimationNames);
+            if (animSel != selectedAnimation) // Selection changed
+            {
+                selectedAnimation = animSel;
+                animation = render.SetAnimation(animSel, variableTable.GetValueOrDefault(ANIM_TIME_KEY, 0F));
 
                 if (animation is not null)
                 {
@@ -78,7 +85,7 @@ namespace CraftSharp.Demo
             if (selectedAnimation != -1)
             {
                 EditorGUILayout.TextArea(
-                        $"Selected animation: [{selectedAnimation}] {render.animationNames[sel]}\n\n{animationDescription}",
+                        $"Selected animation: [{selectedAnimation}] {render.AnimationNames[animSel]}\n\n{animationDescription}",
                         ANIMATION_DESCRIPTION_LAYOUT_OPTIONS);
                 
                 bool variableUpdated = false;

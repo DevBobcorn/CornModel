@@ -16,17 +16,23 @@ namespace CraftSharp.Demo
     {
         private EntityDefinition? entityDefinition = null;
 
-        public Dictionary<string, GameObject> boneObjects = new();
-        public Dictionary<string, GameObject> boneMeshObjects = new();
+        private readonly Dictionary<string, GameObject> boneObjects = new();
+
+        public string[] MaterialNames = { };
+        private readonly Dictionary<string, string> materials = new();
+        private Material? currentMaterial = null;
+
+        public string[] TextureNames = { };
+        private readonly Dictionary<string, Texture2D> textures = new();
 
         private EntityGeometry? geometry = null;
 
-        public string[] animationNames = { };
+        public string[] AnimationNames = { };
         private EntityAnimation?[] animations = { };
         private EntityAnimation? currentAnimation = null;
 
-        private MoScope scope = new(new MoLangRuntime());
-        private MoLangEnvironment env = new();
+        private readonly MoScope scope = new(new MoLangRuntime());
+        private readonly MoLangEnvironment env = new();
 
         private string GetImagePathFromFileName(string name)
         {
@@ -49,7 +55,7 @@ namespace CraftSharp.Demo
             entityDefinition = def;
         }
 
-        public void BuildEntityModel(EntityResourceManager entityResManager, Material defaultMaterial)
+        public void BuildEntityModel(EntityResourceManager entityResManager, MaterialManager matManager)
         {
             if (entityDefinition is null)
             {
@@ -66,47 +72,56 @@ namespace CraftSharp.Demo
             var geometryName = entityDefinition.GeometryNames.First().Value;
             gameObject.name += $" ({geometryName})";
 
-            if (!entityResManager.entityGeometries.ContainsKey(geometryName))
+            if (!entityResManager.EntityGeometries.ContainsKey(geometryName))
             {
-                Debug.LogWarning($"Entity geometry [{geometryName}] not loaded!");
+                // TODO: Debug.LogWarning($"Entity geometry [{geometryName}] not loaded!");
                 return;
             }
 
-            geometry = entityResManager.entityGeometries[geometryName];
+            geometry = entityResManager.EntityGeometries[geometryName];
 
-            var texName = entityDefinition.TexturePaths.First().Value;
-            var fileName = GetImagePathFromFileName(texName);
-            // Load texture from file
-            Texture2D texture;
-            var imageBytes = File.ReadAllBytes(fileName);
-            if (fileName.EndsWith(".tga")) // Read as tga image
+            foreach (var tex in entityDefinition.TexturePaths)
             {
-                texture = TGALoader.TextureFromTGA(imageBytes);
-            }
-            else // Read as png image
-            {
-                texture = new Texture2D(2, 2);
-                texture.LoadImage(imageBytes);
-            }
-
-            texture.filterMode = FilterMode.Point;
-            //Debug.Log($"Loaded texture from {fileName} ({texture.width}x{texture.height})");
-
-            if (geometry.TextureWidth != texture.width && geometry.TextureHeight != texture.height)
-            {
-                if (geometry.TextureWidth == 0 && geometry.TextureHeight == 0) // Not specified, just use the size we have
+                var fileName = GetImagePathFromFileName(tex.Value);
+                // Load texture from file
+                Texture2D texture;
+                var imageBytes = File.ReadAllBytes(fileName);
+                if (fileName.EndsWith(".tga")) // Read as tga image
                 {
-                    geometry.TextureWidth = texture.width;
-                    geometry.TextureHeight = texture.height;
+                    texture = TGALoader.TextureFromTGA(imageBytes);
                 }
-                else // The sizes doesn't match
+                else // Read as png image
                 {
-                    Debug.LogWarning($"Specified texture size({geometry.TextureWidth}x{geometry.TextureHeight}) doesn't match image file {texName} ({texture.width}x{texture.height})!");
+                    texture = new Texture2D(2, 2);
+                    texture.LoadImage(imageBytes);
                 }
-            }
 
+                texture.filterMode = FilterMode.Point;
+                //Debug.Log($"Loaded texture from {fileName} ({texture.width}x{texture.height})");
+
+                if (geometry.TextureWidth != texture.width && geometry.TextureHeight != texture.height)
+                {
+                    if (geometry.TextureWidth == 0 && geometry.TextureHeight == 0) // Not specified, just use the size we have
+                    {
+                        geometry.TextureWidth = texture.width;
+                        geometry.TextureHeight = texture.height;
+                    }
+                    else // The sizes doesn't match
+                    {
+                        //Debug.LogWarning($"Specified texture size({geometry.TextureWidth}x{geometry.TextureHeight}) doesn't match image file {tex.Value} ({texture.width}x{texture.height})!");
+                    }
+                }
+            
+                textures.Add(tex.Key, texture);
+            }
+            TextureNames = textures.Select(x => x.Key).ToArray();
+            SetTexture(0);
+
+            var matId = entityDefinition.MaterialIdentifiers.First().Value;
+            var renderType = entityResManager.MaterialRenderTypes.GetValueOrDefault(matId, EntityRenderType.SOLID);
+            var materialSource = matManager.GetEntityMaterial(renderType);
             // Make a copy of the material
-            var material = new Material(defaultMaterial) { mainTexture = texture };
+            currentMaterial = new Material(materialSource) { mainTexture = textures.First().Value };
 
             // Build mesh for each bone
             foreach (var bone in geometry.Bones.Values)
@@ -128,10 +143,9 @@ namespace CraftSharp.Demo
                 }
 
                 boneMeshFilter!.sharedMesh = EntityVertexBufferBuilder.BuildMesh(visualBuffer);
-                boneMeshRenderer!.sharedMaterial = material;
+                boneMeshRenderer!.sharedMaterial = currentMaterial;
 
                 boneObjects.Add(bone.Name, boneObj);
-                boneMeshObjects.Add(bone.Name, boneObj);
             }
             // Setup initial bone pose
             foreach (var bone in geometry.Bones.Values)
@@ -159,15 +173,14 @@ namespace CraftSharp.Demo
             }
         
             // Prepare animations
-            animationNames = entityDefinition.AnimationNames.Select(x => $"{x.Key} ({x.Value})").ToArray();
-
+            AnimationNames = entityDefinition.AnimationNames.Select(x => $"{x.Key} ({x.Value})").ToArray();
             animations = entityDefinition.AnimationNames.Select(x => 
                     {
                         EntityAnimation? anim;
 
-                        if (entityResManager.entityAnimations.ContainsKey(x.Value))
+                        if (entityResManager.EntityAnimations.ContainsKey(x.Value))
                         {
-                            anim = entityResManager.entityAnimations[x.Value];
+                            anim = entityResManager.EntityAnimations[x.Value];
                         }
                         else
                         {
@@ -179,12 +192,26 @@ namespace CraftSharp.Demo
                     }).ToArray();
         }
 
+        public void SetTexture(int index)
+        {
+            if (index >= 0 && index < TextureNames.Length)
+            {
+                if (currentMaterial != null)
+                {
+                    currentMaterial.mainTexture = textures[TextureNames[index]];
+                }
+            }
+            else
+            {
+                throw new System.Exception($"Invalid texture index: {index}");
+            }
+        }
+
         public EntityAnimation? SetAnimation(int index, float initialTime)
         {
             if (index >= 0 && index < animations.Length)
             {
                 currentAnimation = animations[index];
-
                 UpdateAnimation(initialTime);
 
                 return currentAnimation;
@@ -222,8 +249,6 @@ namespace CraftSharp.Demo
         private void UpdateBone(string boneName, float3? trans, float3? scale, float3? rot)
         {
             var boneTransform = boneObjects[boneName].transform;
-            //var boneMeshTransform = boneMeshObjects[boneName].transform;
-
             var bone = geometry!.Bones[boneName];
 
             if (trans is not null)
