@@ -5,16 +5,16 @@ namespace CraftSharp.Resource
 {
     public class ItemModelPredicate
     {
-        public static readonly ItemModelPredicate EMPTY = new(new());
+        public static readonly ItemModelPredicate EMPTY = new ItemModelPredicate(new());
 
-        private readonly Dictionary<string, float> conditions = new();
+        private Dictionary<string, float> conditions = new Dictionary<string, float>();
 
         public ItemModelPredicate(Dictionary<string, float> conditions)
         {
             this.conditions = conditions;
         }
 
-        public static ItemModelPredicate FromJson(Json.JSONData data)
+        public static ItemModelPredicate fromJson(Json.JSONData data)
         {
             if (data.Properties.Count == 0)
                 return EMPTY;
@@ -32,7 +32,7 @@ namespace CraftSharp.Resource
             return new(conditions);
         }
 
-        public bool Check(ItemStack itemStack)
+        public bool check(ItemStack itemStack)
         {
             // TODO Implement
             return true;

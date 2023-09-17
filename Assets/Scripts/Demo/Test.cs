@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -10,7 +12,6 @@ using Unity.Mathematics;
 using TMPro;
 
 using CraftSharp.Resource;
-using System;
 using CraftSharp.Molang.Runtime;
 
 namespace CraftSharp.Demo
@@ -35,6 +36,9 @@ namespace CraftSharp.Demo
         // Runs before a scene gets loaded
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         public static void InitializeApp() => Loom.Initialize();
+
+        private static readonly bool[] DUMMY_AO_OCCLUSSION = Enumerable.Repeat(false, 27).ToArray();
+        private static readonly float[] DUMMY_BLOCK_VERT_LIGHT = Enumerable.Repeat(0F, 8).ToArray();
 
         public void TestBuildState(string name, int stateId, BlockState state, BlockStateModel stateModel, int cullFlags, AbstractWorld world, float3 pos)
         {
@@ -67,7 +71,8 @@ namespace CraftSharp.Demo
                 int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
 
                 var color = BlockStatePalette.INSTANCE.GetBlockColor(stateId, world, loc, state);
-                model.Build(ref visualBuffer, float3.zero, cullFlags, color);
+                model.Build(ref visualBuffer, float3.zero, cullFlags, DUMMY_AO_OCCLUSSION,
+                        DUMMY_BLOCK_VERT_LIGHT, color);
 
                 int vertexCount = visualBuffer.vert.Length;
                 int triIdxCount = (vertexCount / 2) * 3;
@@ -79,7 +84,7 @@ namespace CraftSharp.Demo
                 vertAttrs[0] = new(VertexAttribute.Position,  dimension: 3, stream: 0);
                 vertAttrs[1] = new(VertexAttribute.TexCoord0, dimension: 3, stream: 1);
                 vertAttrs[2] = new(VertexAttribute.TexCoord3, dimension: 4, stream: 2);
-                vertAttrs[3] = new(VertexAttribute.Color,     dimension: 3, stream: 3);
+                vertAttrs[3] = new(VertexAttribute.Color,     dimension: 4, stream: 3);
 
                 // Set mesh params
                 meshData.SetVertexBufferParams(vertexCount, vertAttrs);
@@ -98,7 +103,7 @@ namespace CraftSharp.Demo
                 var animInfos = meshData.GetVertexData<float4>(2);
                 animInfos.CopyFrom(visualBuffer.uvan);
                 // Vertex colors
-                var vertColors = meshData.GetVertexData<float3>(3);
+                var vertColors = meshData.GetVertexData<float4>(3);
                 vertColors.CopyFrom(visualBuffer.tint);
 
                 // Set face data
@@ -409,7 +414,6 @@ namespace CraftSharp.Demo
 
         void Start()
         {
-            /*
             var overrides = new string[] { "vanilla_fix" };
             string resVersion = "1.16.5", dataVersion = "1.16.5";
 
@@ -430,7 +434,6 @@ namespace CraftSharp.Demo
             {
                 StartCoroutine(DoBuild(dataVersion, resVersion, overrides, 16));
             }
-            */
 
             StartCoroutine(DoEntityBuild());
 
