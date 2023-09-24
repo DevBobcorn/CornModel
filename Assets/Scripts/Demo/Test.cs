@@ -61,11 +61,11 @@ namespace CraftSharp.Demo
                 var visualBuffer = new VertexBuffer();
 
                 if (state.InWater)
-                    FluidGeometry.Build(ref visualBuffer, FluidGeometry.LiquidTextures[0], 0, 0, 0, FLUID_HEIGHTS,
-                            cullFlags, world.GetWaterColor(loc));
+                    FluidGeometry.Build(ref visualBuffer, float3.zero, FluidGeometry.LiquidTextures[0], FLUID_HEIGHTS,
+                            cullFlags, DUMMY_BLOCK_VERT_LIGHT, world.GetWaterColor(loc));
                 else if (state.InLava)
-                    FluidGeometry.Build(ref visualBuffer, FluidGeometry.LiquidTextures[1], 0, 0, 0, FLUID_HEIGHTS,
-                            cullFlags, BlockGeometry.DEFAULT_COLOR);
+                    FluidGeometry.Build(ref visualBuffer, float3.zero, FluidGeometry.LiquidTextures[1], FLUID_HEIGHTS,
+                            cullFlags, DUMMY_BLOCK_VERT_LIGHT, BlockGeometry.DEFAULT_COLOR);
 
                 int fluidVertexCount = visualBuffer.vert.Length;
                 int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
