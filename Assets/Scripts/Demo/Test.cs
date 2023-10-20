@@ -46,7 +46,6 @@ namespace CraftSharp.Demo
             foreach (var model in stateModel.Geometries)
             {
                 var coord = pos + new float3(0F, -altitude * 1.2F, 0F);
-                var loc = new Location(coord.z, coord.y, coord.x);
 
                 var modelObject = new GameObject(name);
                 modelObject.transform.parent = transform;
@@ -62,7 +61,7 @@ namespace CraftSharp.Demo
 
                 if (state.InWater)
                     FluidGeometry.Build(ref visualBuffer, float3.zero, FluidGeometry.LiquidTextures[0], FLUID_HEIGHTS,
-                            cullFlags, DUMMY_BLOCK_VERT_LIGHT, world.GetWaterColor(loc));
+                            cullFlags, DUMMY_BLOCK_VERT_LIGHT, world.GetWaterColor(BlockLoc.Zero));
                 else if (state.InLava)
                     FluidGeometry.Build(ref visualBuffer, float3.zero, FluidGeometry.LiquidTextures[1], FLUID_HEIGHTS,
                             cullFlags, DUMMY_BLOCK_VERT_LIGHT, BlockGeometry.DEFAULT_COLOR);
@@ -70,7 +69,7 @@ namespace CraftSharp.Demo
                 int fluidVertexCount = visualBuffer.vert.Length;
                 int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
 
-                var color = BlockStatePalette.INSTANCE.GetBlockColor(stateId, world, loc, state);
+                var color = BlockStatePalette.INSTANCE.GetBlockColor(stateId, world, BlockLoc.Zero, state);
                 model.Build(ref visualBuffer, float3.zero, cullFlags, DUMMY_AO_OCCLUSSION,
                         DUMMY_BLOCK_VERT_LIGHT, color);
 
