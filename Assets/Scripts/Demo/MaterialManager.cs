@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using CraftSharp.Resource;
+using System.Linq;
 
 namespace CraftSharp
 {
@@ -20,6 +21,7 @@ namespace CraftSharp
         [SerializeField] public Material? EntityTranslucent;
 
         private Dictionary<RenderType, Material> atlasMaterials = new();
+        private Dictionary<RenderType, Material> foglessAtlasMaterials = new();
         private Material? defaultAtlasMaterial;
         private Dictionary<string, Texture2D> skinTextures = new(); // First assign a place holder...
         private Dictionary<string, Material> skinMaterials = new();
@@ -27,10 +29,17 @@ namespace CraftSharp
 
         private bool atlasInitialized = false;
 
-        public Material GetAtlasMaterial(RenderType renderType)
+        public Material GetAtlasMaterial(RenderType renderType, bool disableFog = false)
         {
             EnsureAtlasInitialized();
-            return atlasMaterials.GetValueOrDefault(renderType, defaultAtlasMaterial!);
+            if (disableFog)
+            {
+                return foglessAtlasMaterials.GetValueOrDefault(renderType, defaultAtlasMaterial!);
+            }
+            else
+            {
+                return atlasMaterials.GetValueOrDefault(renderType, defaultAtlasMaterial!);
+            }
         }
 
         public Material GetEntityMaterial(EntityRenderType renderType)
@@ -79,6 +88,16 @@ namespace CraftSharp
 
             // Water
             atlasMaterials.Add(RenderType.WATER, translucent);
+
+            // Make fogless variants
+            foglessAtlasMaterials = atlasMaterials.ToDictionary(x => x.Key, x =>
+            {
+                // Make a copy of the material
+                var m = new Material(x.Value);
+                // Set disable fog keyword
+                m.EnableKeyword("_DISABLE_FOG");
+                return m;
+            });
 
             atlasInitialized = true;
         }

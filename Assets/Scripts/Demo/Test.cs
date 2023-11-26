@@ -269,7 +269,8 @@ namespace CraftSharp.Demo
             itemGeometry.Build(ref visualBuffer, ITEM_CENTER, colors);
 
             filter.sharedMesh = VertexBufferBuilder.BuildMesh(visualBuffer);
-            render.sharedMaterial = materialManager.GetAtlasMaterial(itemModel.RenderType);
+            // Use material variants with fog disabled
+            render.sharedMaterial = materialManager.GetAtlasMaterial(itemModel.RenderType, true);
         }
 
         class World : AbstractWorld { }

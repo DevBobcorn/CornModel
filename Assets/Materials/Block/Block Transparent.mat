@@ -27,7 +27,8 @@ Material:
   m_ValidKeywords:
   - _ALPHAPREMULTIPLY_ON
   - _SURFACE_TYPE_TRANSPARENT
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - ENABLE_FOG
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -134,6 +135,7 @@ Material:
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 1
+    - _UseFog: 1
     - _WorkflowMode: 1
     - _ZWrite: 0
     m_Colors:
