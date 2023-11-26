@@ -1,23 +1,21 @@
 {
   "dependencies": {
     "com.devbobcorn.craftsharp": {
-      "version": "https://github.com/DevBobcorn/CraftSharp.git",
+      "version": "file:com.devbobcorn.craftsharp",
       "depth": 0,
-      "source": "git",
+      "source": "embedded",
       "dependencies": {
         "com.unity.mathematics": "1.2.6"
-      },
-      "hash": "177fa09745d9f3dc8357b02c7619b1ba913f5223"
+      }
     },
     "com.devbobcorn.craftsharp-resource": {
-      "version": "https://github.com/DevBobcorn/CraftSharp-Resource.git",
+      "version": "file:com.devbobcorn.craftsharp-resource",
       "depth": 0,
-      "source": "git",
+      "source": "embedded",
       "dependencies": {
         "com.unity.mathematics": "1.2.6",
         "com.devbobcorn.craftsharp": "1.0.0"
-      },
-      "hash": "24b793a53ac27855e6c6b39bf1f666641286007a"
+      }
     },
     "com.unity.burst": {
       "version": "1.8.8",
