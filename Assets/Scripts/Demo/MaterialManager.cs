@@ -1,9 +1,9 @@
 #nullable enable
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 using CraftSharp.Resource;
-using System.Linq;
 
 namespace CraftSharp
 {
@@ -20,7 +20,7 @@ namespace CraftSharp
         [SerializeField] public Material? EntityCutoutDoubleSided;
         [SerializeField] public Material? EntityTranslucent;
 
-        private Dictionary<RenderType, Material> atlasMaterials = new();
+        private readonly Dictionary<RenderType, Material> atlasMaterials = new();
         private Dictionary<RenderType, Material> foglessAtlasMaterials = new();
         private Material? defaultAtlasMaterial;
         private Dictionary<string, Texture2D> skinTextures = new(); // First assign a place holder...
