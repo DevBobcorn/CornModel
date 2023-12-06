@@ -17,15 +17,6 @@
         "com.devbobcorn.craftsharp": "1.0.0"
       }
     },
-    "com.fernrender.core": {
-      "version": "file:com.fernrender.core",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {
-        "com.unity.render-pipelines.core": "14.0.6",
-        "com.unity.shadergraph": "14.0.6"
-      }
-    },
     "com.unity.burst": {
       "version": "1.8.8",
       "depth": 1,
