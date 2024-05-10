@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Mathematics;
-using Unity.VisualScripting;
 
 using CraftSharp.Molang.Runtime;
 using CraftSharp.Molang.Utils;
@@ -31,20 +30,20 @@ namespace CraftSharp.Resource
             // Collect all appeared variables
             if (t is not null) for (int i = 0; i < t.Length; i++)
             {
-                variables.AddRange(t[i].pre.GetReferencedVariables());
-                variables.AddRange(t[i].post.GetReferencedVariables());
+                t[i].pre.GetReferencedVariables().ToList().ForEach(x => variables.Add(x));
+                t[i].post.GetReferencedVariables().ToList().ForEach(x => variables.Add(x));
             }
 
             if (s is not null) for (int i = 0; i < s.Length; i++)
             {
-                variables.AddRange(s[i].pre.GetReferencedVariables());
-                variables.AddRange(s[i].post.GetReferencedVariables());
+                s[i].pre.GetReferencedVariables().ToList().ForEach(x => variables.Add(x));
+                s[i].post.GetReferencedVariables().ToList().ForEach(x => variables.Add(x));
             }
 
             if (r is not null) for (int i = 0; i < r.Length; i++)
             {
-                variables.AddRange(r[i].pre.GetReferencedVariables());
-                variables.AddRange(r[i].post.GetReferencedVariables());
+                r[i].pre.GetReferencedVariables().ToList().ForEach(x => variables.Add(x));
+                r[i].post.GetReferencedVariables().ToList().ForEach(x => variables.Add(x));
             }
         }
 

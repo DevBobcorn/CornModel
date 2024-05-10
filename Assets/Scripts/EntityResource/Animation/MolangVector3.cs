@@ -1,11 +1,11 @@
 #nullable enable
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Unity.Mathematics;
 
 using CraftSharp.Molang.Runtime;
 using CraftSharp.Molang.Parser;
-using Unity.VisualScripting;
 using CraftSharp.Molang.Utils;
 
 namespace CraftSharp.Resource
@@ -59,9 +59,9 @@ namespace CraftSharp.Resource
         public HashSet<MoPath> GetReferencedVariables()
         {
             HashSet<MoPath> result = new();
-            if (x is not null) result.AddRange(x.GetReferencedVariables());
-            if (y is not null) result.AddRange(y.GetReferencedVariables());
-            if (z is not null) result.AddRange(z.GetReferencedVariables());
+            x?.GetReferencedVariables().ToList().ForEach(v => result.Add(v));
+            y?.GetReferencedVariables().ToList().ForEach(v => result.Add(v));
+            z?.GetReferencedVariables().ToList().ForEach(v => result.Add(v));
 
             return result;
         }

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using UnityEngine;
-using Unity.VisualScripting;
 using UnityEditor;
 
 using CraftSharp.Resource;
@@ -57,7 +56,7 @@ namespace CraftSharp.Demo
                     // Then append all variables used in this animation
                     foreach (var pair in animation.BoneAnimations)
                     {
-                        allVariables.AddRange(pair.Value.Variables);
+                        pair.Value.Variables.ToList().ForEach(x => allVariables.Add(x));
 
                         var variables = string.Join(", ", pair.Value.Variables);
                         animationDesc.AppendLine($"   - {pair.Key} ({variables})");

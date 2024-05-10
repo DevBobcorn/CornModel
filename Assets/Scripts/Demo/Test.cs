@@ -40,7 +40,7 @@ namespace CraftSharp.Demo
         private static readonly bool[] DUMMY_AO_OCCLUSSION = Enumerable.Repeat(false, 27).ToArray();
         private static readonly float[] DUMMY_BLOCK_VERT_LIGHT = Enumerable.Repeat(0F, 8).ToArray();
 
-        public void TestBuildState(string name, int stateId, BlockState state, BlockStateModel stateModel, int cullFlags, AbstractWorld world, float3 pos)
+        public void TestBuildState(string name, int stateId, BlockState state, BlockStateModel stateModel, int cullFlags, World world, float3 pos)
         {
             int altitude = 0;
             foreach (var model in stateModel.Geometries)
@@ -273,8 +273,6 @@ namespace CraftSharp.Demo
             render.sharedMaterial = materialManager.GetAtlasMaterial(itemModel.RenderType, true);
         }
 
-        class World : AbstractWorld { }
-
         private IEnumerator DoBuild(string dataVersion, string resourceVersion, string[] resourceOverrides, int itemPrecision)
         {
             // First load all possible Block States...
@@ -435,7 +433,7 @@ namespace CraftSharp.Demo
                 StartCoroutine(DoBuild(dataVersion, resVersion, overrides, 16));
             }
 
-            StartCoroutine(DoEntityBuild());
+            //StartCoroutine(DoEntityBuild());
 
             IsPaused = false;
         }
