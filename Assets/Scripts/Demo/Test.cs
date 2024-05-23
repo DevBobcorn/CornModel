@@ -393,7 +393,7 @@ namespace CraftSharp.Demo
 
                 var entityRenderObj = new GameObject($"{index} {entityType}");
                 entityRenderObj.transform.SetParent(testmentObj.transform);
-                entityRenderObj.transform.localPosition= new(i * 2, 0, j * 2);
+                entityRenderObj.transform.localPosition= new(i * 2, 0, - (entityPerRow - j) * 2);
 
                 var entityRender = entityRenderObj.AddComponent<EntityModelRender>();
                 try
@@ -433,7 +433,7 @@ namespace CraftSharp.Demo
                 StartCoroutine(DoBuild(dataVersion, resVersion, overrides, 16));
             }
 
-            //StartCoroutine(DoEntityBuild());
+            StartCoroutine(DoEntityBuild());
 
             IsPaused = false;
         }
