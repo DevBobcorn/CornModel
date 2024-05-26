@@ -198,7 +198,13 @@ namespace CraftSharp.Demo
 
                 var tintFunc = ItemPalette.INSTANCE.GetTintRule(itemStack.ItemType.ItemId);
                 if (tintFunc is null)
-                    colors = new float3[]{ new(1F, 0F, 0F), new(0F, 0F, 1F), new(0F, 1F, 0F) };
+                {
+                    // Use high-constrast colors for troubleshooting and debugging
+                    //colors = new float3[]{ new(1F, 0F, 0F), new(0F, 1F, 0F), new(0F, 0F, 1F) };
+                    // Or use white colors to make sure models with mis-tagged tinted faces still look right
+                    colors = new float3[]{ new(1F, 1F, 1F), new(1F, 1F, 1F), new(1F, 1F, 1F) };
+                }
+                    
                 else
                     colors = tintFunc.Invoke(itemStack);
 
@@ -412,7 +418,7 @@ namespace CraftSharp.Demo
 
         void Start()
         {
-            var overrides = new string[] { "vanilla_fix" };
+            var overrides = new string[] { "vanilla_fix"/*, "3D Default 1.16.2+ v1.6.0"*/ };
             string resVersion = "1.16.5", dataVersion = "1.16.5";
 
             if (!Directory.Exists(PathHelper.GetPackDirectoryNamed($"vanilla-{resVersion}"))) // Prepare resources first
@@ -433,7 +439,7 @@ namespace CraftSharp.Demo
                 StartCoroutine(DoBuild(dataVersion, resVersion, overrides, 16));
             }
 
-            StartCoroutine(DoEntityBuild());
+            //StartCoroutine(DoEntityBuild());
 
             IsPaused = false;
         }
