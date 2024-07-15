@@ -43,7 +43,7 @@ namespace CraftSharp.Demo
         public void TestBuildState(string name, int stateId, BlockState state, BlockStateModel stateModel, int cullFlags, World world, float3 pos)
         {
             int altitude = 0;
-            foreach (var model in stateModel.Geometries)
+            foreach (var geometry in stateModel.Geometries)
             {
                 var coord = pos + new float3(0F, -altitude * 1.2F, 0F);
 
@@ -56,24 +56,30 @@ namespace CraftSharp.Demo
 
                 var collider = modelObject.AddComponent<MeshCollider>();
 
+                int vertexCount = geometry.GetVertexCount(cullFlags);
+
+                if (state.InWater || state.InLava)
+                    vertexCount += FluidGeometry.GetVertexCount(cullFlags);
+
                 // Make and set mesh...
-                var visualBuffer = new VertexBuffer();
+                var visualBuffer = new VertexBuffer(vertexCount);
+
+                uint vertexOffset = 0;
 
                 if (state.InWater)
-                    FluidGeometry.Build(ref visualBuffer, float3.zero, FluidGeometry.LiquidTextures[0], FLUID_HEIGHTS,
+                    FluidGeometry.Build(visualBuffer, ref vertexOffset, float3.zero, FluidGeometry.LiquidTextures[0], FLUID_HEIGHTS,
                             cullFlags, DUMMY_BLOCK_VERT_LIGHT, world.GetWaterColor(BlockLoc.Zero));
                 else if (state.InLava)
-                    FluidGeometry.Build(ref visualBuffer, float3.zero, FluidGeometry.LiquidTextures[1], FLUID_HEIGHTS,
+                    FluidGeometry.Build(visualBuffer, ref vertexOffset, float3.zero, FluidGeometry.LiquidTextures[1], FLUID_HEIGHTS,
                             cullFlags, DUMMY_BLOCK_VERT_LIGHT, BlockGeometry.DEFAULT_COLOR);
 
                 int fluidVertexCount = visualBuffer.vert.Length;
                 int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
 
                 var color = BlockStatePalette.INSTANCE.GetBlockColor(stateId, world, BlockLoc.Zero, state);
-                model.Build(ref visualBuffer, float3.zero, cullFlags, DUMMY_AO_OCCLUSSION,
+                geometry.Build(visualBuffer, ref vertexOffset, float3.zero, cullFlags, DUMMY_AO_OCCLUSSION,
                         DUMMY_BLOCK_VERT_LIGHT, color);
 
-                int vertexCount = visualBuffer.vert.Length;
                 int triIdxCount = (vertexCount / 2) * 3;
 
                 var meshDataArr = Mesh.AllocateWritableMeshData(1);
@@ -192,7 +198,7 @@ namespace CraftSharp.Demo
                 var collider = modelObject.AddComponent<MeshCollider>();
 
                 // Make and set mesh...
-                var visualBuffer = new VertexBuffer();
+                var visualBuffer = new VertexBuffer(pair.Value.GetVertexCount());
 
                 float3[] colors;
 
@@ -207,8 +213,9 @@ namespace CraftSharp.Demo
                     
                 else
                     colors = tintFunc.Invoke(itemStack);
-
-                pair.Value.Build(ref visualBuffer, float3.zero, colors);
+                
+                uint vertOffset = 0;
+                pair.Value.Build(visualBuffer, ref vertOffset, float3.zero, colors);
 
                 var mesh = VertexBufferBuilder.BuildMesh(visualBuffer);
                 filter.sharedMesh   = mesh;
@@ -262,7 +269,7 @@ namespace CraftSharp.Demo
             }
 
             // Make and set mesh...
-            var visualBuffer = new VertexBuffer();
+            var visualBuffer = new VertexBuffer(itemGeometry.GetVertexCount());
 
             float3[] colors;
 
@@ -272,7 +279,8 @@ namespace CraftSharp.Demo
             else
                 colors = tintFunc.Invoke(itemStack);
 
-            itemGeometry.Build(ref visualBuffer, ITEM_CENTER, colors);
+            uint vertOffset = 0;
+            itemGeometry.Build(visualBuffer, ref vertOffset, ITEM_CENTER, colors);
 
             filter.sharedMesh = VertexBufferBuilder.BuildMesh(visualBuffer);
             // Use material variants with fog disabled
@@ -419,7 +427,7 @@ namespace CraftSharp.Demo
         void Start()
         {
             var overrides = new string[] { "vanilla_fix"/*, "3D Default 1.16.2+ v1.6.0"*/ };
-            string resVersion = "1.16.5", dataVersion = "1.16.5";
+            string resVersion = "1.16.5", dataVersion = "1.16";
 
             if (!Directory.Exists(PathHelper.GetPackDirectoryNamed($"vanilla-{resVersion}"))) // Prepare resources first
             {
