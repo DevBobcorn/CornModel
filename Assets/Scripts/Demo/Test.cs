@@ -37,7 +37,6 @@ namespace CraftSharp.Demo
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         public static void InitializeApp() => Loom.Initialize();
 
-        private static readonly bool[] DUMMY_AO_OCCLUSSION = Enumerable.Repeat(false, 27).ToArray();
         private static readonly float[] DUMMY_BLOCK_VERT_LIGHT = Enumerable.Repeat(0F, 8).ToArray();
 
         public void TestBuildState(string name, int stateId, BlockState state, BlockStateModel stateModel, int cullFlags, World world, float3 pos)
@@ -77,8 +76,7 @@ namespace CraftSharp.Demo
                 int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
 
                 var color = BlockStatePalette.INSTANCE.GetBlockColor(stateId, world, BlockLoc.Zero, state);
-                geometry.Build(visualBuffer, ref vertexOffset, float3.zero, cullFlags, DUMMY_AO_OCCLUSSION,
-                        DUMMY_BLOCK_VERT_LIGHT, color);
+                geometry.Build(visualBuffer, ref vertexOffset, float3.zero, cullFlags, 0, DUMMY_BLOCK_VERT_LIGHT, color);
 
                 int triIdxCount = (vertexCount / 2) * 3;
 
