@@ -329,7 +329,7 @@ namespace CraftSharp.Demo
                 int index = count - start;
                 if (index >= 0)
                 {
-                    var state = BlockStatePalette.INSTANCE.StatesTable[pair.Key];
+                    var state = BlockStatePalette.INSTANCE.GetByNumId(pair.Key);
 
                     TestBuildState($"Block [{pair.Key}] {state}", pair.Key, state, pair.Value, 0b111111, world, new((index % width) * 1.2F, 0, (index / width) * 1.2F));
                 }
@@ -346,7 +346,7 @@ namespace CraftSharp.Demo
                 int index = count - start;
                 if (index >= 0)
                 {
-                    var item = ItemPalette.INSTANCE.ItemsTable[pair.Key];
+                    var item = ItemPalette.INSTANCE.GetByNumId(pair.Key);
                     var itemStack = new ItemStack(item, 1, null);
 
                     TestBuildItem($"Item [{pair.Key}] {item}", pair.Key, itemStack, pair.Value, new(-(index % width) * 1.5F - 1.5F, 0F, (index / width) * 1.5F));
@@ -493,7 +493,7 @@ namespace CraftSharp.Demo
 
                 foreach (var itemNumId in InventoryBuildList)
                 {
-                    var item = ItemPalette.INSTANCE.ItemsTable[itemNumId];
+                    var item = ItemPalette.INSTANCE.GetByNumId(itemNumId);
                     var itemStack = new ItemStack(item, 1, null);
 
                     TestBuildInventoryItem($"Item [{itemNumId}] {item}", itemStack, packManager.ItemModelTable[itemNumId]);
