@@ -14,7 +14,7 @@ namespace CraftSharp.Demo
 {
     public class EntityModelRender : MonoBehaviour
     {
-        private EntityDefinition? entityDefinition = null;
+        private EntityRenderDefinition? entityDefinition = null;
 
         private readonly Dictionary<string, GameObject> boneObjects = new();
 
@@ -50,7 +50,7 @@ namespace CraftSharp.Demo
             return name;
         }
 
-        public void SetDefinitionData(EntityDefinition def)
+        public void SetDefinitionData(EntityRenderDefinition def)
         {
             entityDefinition = def;
         }

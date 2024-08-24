@@ -76,7 +76,7 @@ namespace CraftSharp.Demo
                 int fluidTriIdxCount = (fluidVertexCount / 2) * 3;
 
                 var color = BlockStatePalette.INSTANCE.GetBlockColor(stateId, world, BlockLoc.Zero, state);
-                geometry.Build(visualBuffer, ref vertexOffset, float3.zero, cullFlags, 0, DUMMY_BLOCK_VERT_LIGHT, color);
+                geometry.Build(visualBuffer, ref vertexOffset, float3.zero, cullFlags, 0, 0F, DUMMY_BLOCK_VERT_LIGHT, color);
 
                 int triIdxCount = (vertexCount / 2) * 3;
 
@@ -395,7 +395,7 @@ namespace CraftSharp.Demo
             var testmentObj = new GameObject("[Entity Testment]");
             int entityPerRow = 10;
             int index = 0;
-            foreach (var pair in entityResManager.EntityDefinitions)
+            foreach (var pair in entityResManager.EntityRenderDefinitions)
             {
                 var entityType = pair.Key;
                 var entityDef = pair.Value;
@@ -445,7 +445,7 @@ namespace CraftSharp.Demo
                 StartCoroutine(DoBuild(dataVersion, resVersion, overrides, 16));
             }
 
-            //StartCoroutine(DoEntityBuild());
+            StartCoroutine(DoEntityBuild());
 
             IsPaused = false;
         }
