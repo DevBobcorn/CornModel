@@ -23,9 +23,6 @@ namespace CraftSharp
         private readonly Dictionary<RenderType, Material> atlasMaterials = new();
         private Dictionary<RenderType, Material> foglessAtlasMaterials = new();
         private Material? defaultAtlasMaterial;
-        private Dictionary<string, Texture2D> skinTextures = new(); // First assign a place holder...
-        private Dictionary<string, Material> skinMaterials = new();
-        public Dictionary<string, Material> SkinMaterials => skinMaterials;
 
         private bool atlasInitialized = false;
 
@@ -86,8 +83,11 @@ namespace CraftSharp
             translucent.SetTexture("_BaseMap", packManager.GetAtlasArray(false));
             atlasMaterials.Add(RenderType.TRANSLUCENT, translucent);
 
-            // Water
+            // Water, Foliage, Plants, Tall Plants
             atlasMaterials.Add(RenderType.WATER, translucent);
+            atlasMaterials.Add(RenderType.FOLIAGE, cutout);
+            atlasMaterials.Add(RenderType.PLANTS, cutout);
+            atlasMaterials.Add(RenderType.TALL_PLANTS, cutout);
 
             // Make fogless variants
             foglessAtlasMaterials = atlasMaterials.ToDictionary(x => x.Key, x =>
