@@ -7,7 +7,7 @@ __CornModel__ is a Minecraft resource loader which can be easily merged into and
 The resource loader code and block shaders are packed and moved to [CraftSharp-Resource](https://github.com/DevBobcorn/CraftSharp-Resource) as a Unity package, and this project currently serves as a sample for using this package.
 
 ## > Building & Running
-The program is made and tested with Unity 2022.3.26f1, so it is recommended to use this version(or newer) of Unity to build this app.
+The program is made and tested with Unity 2022.3.50f1, so it is recommended to use this version(or newer) of Unity to build this app.
 
 Resource files will now be automatically downloaded if they're not present, so manual downloading is no longer necessary.
 
