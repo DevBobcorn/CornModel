@@ -186,7 +186,7 @@ namespace CraftSharp.Demo
             {
                 var coord = pos + new float3(0F, -altitude * 1.2F, 0F);
 
-                var modelObject = new GameObject(pair.Key == ItemModelPredicate.EMPTY ? name : $"{name}{pair.Key}");
+                var modelObject = new GameObject(pair.Key == ItemModelPredicate.EMPTY ? name : $"[{itemNumId}] {name}{pair.Key}");
                 modelObject.transform.parent = transform;
                 modelObject.transform.localPosition = coord;
 
@@ -285,7 +285,7 @@ namespace CraftSharp.Demo
             render.sharedMaterial = materialManager.GetAtlasMaterial(itemModel.RenderType, true);
         }
 
-        private IEnumerator DoBuild(string dataVersion, string resourceVersion, string[] resourceOverrides, int itemPrecision)
+        private IEnumerator DoBuild(string dataVersion, string resourceVersion, string[] resourceOverrides)
         {
             // First load all possible Block States...
             var loadFlag = new DataLoadFlag();
@@ -311,7 +311,7 @@ namespace CraftSharp.Demo
             // Load valid packs...
             loadFlag.Finished = false;
             Task.Run(() => packManager.LoadPacks(loadFlag,
-                    (status) => Loom.QueueOnMainThread(() => InfoText.text = status)));
+                    (status) => Loom.QueueOnMainThread(() => InfoText.text = Translations.Get(status))));
             while (!loadFlag.Finished) yield return null;
 
             // Loading complete!
@@ -367,9 +367,9 @@ namespace CraftSharp.Demo
             var data = Json.ParseJson(jsonStr);
             var anim = EntityBoneAnimation.FromJson(data);
 
-            foreach (var keyframe in anim.scaleKeyframes)
+            foreach (var (time, pre, post) in anim.scaleKeyframes)
             {
-                Debug.Log($"SCALE [{keyframe.time}] {keyframe.pre} {keyframe.post}");
+                Debug.Log($"SCALE [{time}] {pre} {post}");
             }
 
             var scope = new MoScope(new());
@@ -377,8 +377,8 @@ namespace CraftSharp.Demo
 
             for (float a = -1F; a < 3F; a += 0.05F)
             {
-                var val = anim.Evaluate(a, scope, env);
-                Debug.Log($"[{a}] => [{val.trans} | {val.scale} {val.rot}]");
+                var (trans, scale, rot) = anim.Evaluate(a, scope, env);
+                Debug.Log($"[{a}] => [{trans} | {scale} {rot}]");
             }
         }
 
@@ -390,7 +390,7 @@ namespace CraftSharp.Demo
             var entityResManager = new EntityResourceManager(entityResPath, playerModelsPath);
 
             yield return StartCoroutine(entityResManager.LoadEntityResources(new(),
-                    (status) => Loom.QueueOnMainThread(() => InfoText.text = status)));
+                    (status) => Loom.QueueOnMainThread(() => InfoText.text = Translations.Get(status))));
             
             var testmentObj = new GameObject("[Entity Testment]");
             int entityPerRow = 10;
@@ -432,17 +432,17 @@ namespace CraftSharp.Demo
                 Debug.Log($"Resources for {resVersion} not present. Downloading...");
 
                 StartCoroutine(ResourceDownloader.DownloadResource(resVersion,
-                        (status) => Loom.QueueOnMainThread(() => InfoText.text = status), () => { },
+                        (status) => Loom.QueueOnMainThread(() => InfoText.text = Translations.Get(status)), () => { },
                         (succeeded) => {
                             if (succeeded) // Resources ready, do build
-                                StartCoroutine(DoBuild(dataVersion, resVersion, overrides, 16));
+                                StartCoroutine(DoBuild(dataVersion, resVersion, overrides));
                             else // Failed to download resources
                                 InfoText.text = $"Failed to download resources for {resVersion}.";
                         }));
             }
             else // Resources ready, do build
             {
-                StartCoroutine(DoBuild(dataVersion, resVersion, overrides, 16));
+                StartCoroutine(DoBuild(dataVersion, resVersion, overrides));
             }
 
             StartCoroutine(DoEntityBuild());
