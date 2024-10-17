@@ -1,10 +1,11 @@
 # CornModel
 A Minecraft Model Reader for Unity written in C#.
 
+# Important!
+## This project is archived. The resource loader code and block shaders are packed and moved to [CraftSharp-Resource](https://github.com/DevBobcorn/CraftSharp-Resource) as a Unity package, and the resource test scene(shown in the screenshots) is incorporated into the main project [here](https://github.com/DevBobcorn/CornCraft).
+
 ## > About
 __CornModel__ is a Minecraft resource loader which can be easily merged into and used by other Minecraft-related Unity projects. It parses Minecraft: Java Edition's json model format, reads models from json files and builds them into geometry data. For block models, face-culling data is contained in the loaded geometry data, so it is possible to build optimized large chunks of block meshes with all hidden faces culled.
-### Important!
-The resource loader code and block shaders are packed and moved to [CraftSharp-Resource](https://github.com/DevBobcorn/CraftSharp-Resource) as a Unity package, and this project currently serves as a sample for using this package.
 
 ## > Building & Running
 The program is made and tested with Unity 2022.3.50f1, so it is recommended to use this version(or newer) of Unity to build this app.
