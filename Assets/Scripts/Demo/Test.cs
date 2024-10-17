@@ -184,7 +184,7 @@ namespace CraftSharp.Demo
             int altitude = 0;
             foreach (var pair in buildDict)
             {
-                var coord = pos + new float3(0F, -altitude * 1.2F, 0F);
+                var coord = pos + new float3(0F, altitude * 1.2F, 0F);
 
                 var modelObject = new GameObject(pair.Key == ItemModelPredicate.EMPTY ? name : $"[{itemNumId}] {name}{pair.Key}");
                 modelObject.transform.parent = transform;
@@ -208,7 +208,6 @@ namespace CraftSharp.Demo
                     // Or use white colors to make sure models with mis-tagged tinted faces still look right
                     colors = new float3[]{ new(1F, 1F, 1F), new(1F, 1F, 1F), new(1F, 1F, 1F) };
                 }
-                    
                 else
                     colors = tintFunc.Invoke(itemStack);
                 
@@ -238,6 +237,7 @@ namespace CraftSharp.Demo
 
             // Handle GUI display transform
             bool hasGUITransform = itemGeometry.DisplayTransforms.TryGetValue(DisplayPosition.GUI, out float3x3 t);
+            
             // Make use of the debug text
             invItemObj.GetComponentInChildren<TMP_Text>().text = hasGUITransform ? $"{t.c1.x} {t.c1.y} {t.c1.z}" : string.Empty;
 
@@ -445,7 +445,7 @@ namespace CraftSharp.Demo
                 StartCoroutine(DoBuild(dataVersion, resVersion, overrides));
             }
 
-            StartCoroutine(DoEntityBuild());
+            //StartCoroutine(DoEntityBuild());
 
             IsPaused = false;
         }
